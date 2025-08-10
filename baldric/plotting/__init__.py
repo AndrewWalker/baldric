@@ -1,4 +1,5 @@
 from typing import List
+import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from baldric.collision import CollisionChecker
@@ -8,6 +9,7 @@ from baldric.collision.convex_collision import (
     ConvexPolygon2dSet,
     ConvexPolygon2dCollisionChecker,
 )
+from baldric.planners.rrt import Tree
 
 
 def plot_aabb(ax, box: AABB, color="red"):
@@ -37,3 +39,14 @@ def plot_collision_checker(ax, checker: CollisionChecker, **kwargs):
         case ConvexPolygon2dCollisionChecker():
             for o in checker.obs:
                 plot_polyset(ax, o)
+
+
+def plot_tree(ax, tree: Tree):
+    for n_i, n_child_i in tree.edges:
+        if n_child_i == -1:
+            continue
+        q_i = tree.configuration[n_i, :]
+        q_c = tree.configuration[n_child_i, :]
+        qs = np.vstack([q_i, q_c])
+        plt.plot(qs[:, 0], qs[:, 1], "b-")
+        plt.plot(qs[:, 0], qs[:, 1], "r.")
