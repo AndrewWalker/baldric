@@ -1,22 +1,38 @@
 import numpy as np
+from loguru import logger
 
 
 class Space:
-    def __init__(self, d):
-        self._dimension = d
+    def __init__(self, dimension: int, metric_weights: np.ndarray | None = None):
+        self._dimension = dimension
+        if metric_weights is None:
+            self._weights = np.ones(dimension)
+        else:
+            self._weights = metric_weights
 
     @property
     def dimension(self) -> int:
         return self._dimension
 
-    def normalise_state(self, q: np.ndarray) -> np.ndarray:
-        return q
+    def difference(self, q0: np.ndarray, q1: np.ndarray):
+        return q1 - q0
 
     def distance(self, q0: np.ndarray, q1: np.ndarray) -> float:
-        raise NotImplementedError
+        """Calculate the distance between configurations"""
+        return float(self.distance_many(q0.reshape(1, -1), q1)[0])
+
+    def distance_many(self, qs: np.ndarray, q1: np.ndarray) -> np.ndarray:
+        dq = self.difference(qs, q1)
+        return np.sqrt(np.sum(dq * dq * self._weights, axis=1))
 
     def interpolate(self, q0: np.ndarray, q1: np.ndarray, s: float) -> np.ndarray:
-        raise NotImplementedError
+        """Interpolate between configurations"""
+        if s < 0.0 or s > 1.0:
+            snew = max(min(s, 1.0), 0.0)
+            logger.debug("clamped interpolant {s} to {snew}")
+            s = snew
+        dq = self.difference(q0, q1)
+        return q0 + s * dq
 
     def interpolate_many(
         self, q0: np.ndarray, q1: np.ndarray, ss: np.ndarray
@@ -86,33 +102,26 @@ class Space:
 class VectorSpace(Space):
     """R^n"""
 
-    def __init__(self, d=2):
-        super().__init__(d=d)
-
-    def distance(self, q0: np.ndarray, q1: np.ndarray) -> float:
-        return np.linalg.norm(q1 - q0)
-
-    def interpolate(self, q0: np.ndarray, q1: np.ndarray, s: float) -> np.ndarray:
-        return q0 + s * (q1 - q0)
+    def __init__(self, dimension=2):
+        super().__init__(dimension=dimension)
 
 
 class RigidBody2dSpace(Space):
     """R^2 . S"""
 
-    def __init__(self):
-        super().__init__(d=2)
+    def __init__(self, metric_weights: np.ndarray):
+        super().__init__(dimension=3, metric_weights=metric_weights)
+
+    @staticmethod
+    def from_points(pts: np.ndarray):
+        L = np.max(np.linalg.norm(pts, axis=1))
+        return RigidBody2dSpace(metric_weights=np.array([1.0, 1.0, 2 * 1.45 * L]))
 
     def normalize_angle(self, angle):
-        return np.arctan2(np.sin(angle), np.cos(angle))
-
-    def normalise_state(self, q: np.ndarray) -> np.ndarray:
-        res = q.copy()
-        res[2] = self.normalize_angle(q[2])
+        res = np.arctan2(np.sin(angle), np.cos(angle))
         return res
 
-    def distance(self, q0: np.ndarray, q1: np.ndarray) -> float:
-        return np.linalg.norm(q1[:2] - q0[:2])
-
-    def interpolate(self, q0: np.ndarray, q1: np.ndarray, s: float) -> np.ndarray:
-        dq = self.normalise_state(q1 - q0)
-        return q0 + s * dq
+    def difference(self, q0, q1):
+        dq = (q1 - q0).reshape(-1, self.dimension)
+        dq[:, 2] = self.normalize_angle(dq[:, 2])
+        return dq

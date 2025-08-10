@@ -3,12 +3,12 @@ from baldric.spaces import VectorSpace
 
 
 def test_vector_space_dimension():
-    space = VectorSpace(2)
+    space = VectorSpace()
     assert space.dimension == 2
 
 
 def test_vector_space_distance():
-    space = VectorSpace(2)
+    space = VectorSpace()
     q0 = np.random.random(2)
     assert np.abs(space.distance(q0, q0)) < 1e-5
 
@@ -22,7 +22,7 @@ def test_vector_space_distance():
 
 
 def test_vector_space_interp_many():
-    space = VectorSpace(2)
+    space = VectorSpace()
     q0 = np.random.random(2)
     assert np.abs(space.distance(q0, q0)) < 1e-5
 
@@ -33,7 +33,7 @@ def test_vector_space_interp_many():
 
 
 def test_vector_space_piecewise_path_length():
-    space = VectorSpace(2)
+    space = VectorSpace()
     path = np.array(
         [
             [0.0, 0],
@@ -57,7 +57,7 @@ def test_vector_space_path_sample():
 
 
 def test_vector_space_path_interp():
-    space = VectorSpace(2)
+    space = VectorSpace()
     path = np.array(
         [
             [0.0, 0],
@@ -73,7 +73,7 @@ def test_vector_space_path_interp():
 
 
 def test_vector_space_interp_approx_dist():
-    space = VectorSpace(2)
+    space = VectorSpace()
     q0 = np.array([0.0, 0.0])
     q1 = np.array([10.0, 0.0])
     pts = space.interpolate_approx_distance(q0, q1, 5.0)

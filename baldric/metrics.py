@@ -1,9 +1,13 @@
 import numpy as np
+from baldric.spaces import Space
 
 
 class Nearest:
-    def distance(self, qa, qb):
-        return np.linalg.norm(qb - qa)
+    def __init__(self, space: Space):
+        self.space = space
+
+    def distance(self, q0: np.ndarray, q1: np.ndarray):
+        return self.space.distance(q0, q1)
 
     def nearest(self, qs: np.ndarray, q: np.ndarray) -> int:
         """Find the index of the nearest element in qs to q"""
@@ -15,8 +19,11 @@ class Nearest:
 
 
 class NaiveNearest(Nearest):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, space: Space):
+        super().__init__(space)
+
+    def distance(self, q0: np.ndarray, q1: np.ndarray):
+        return self.space.distance(q0, q1)
 
     def nearest(self, qs: np.ndarray, q: np.ndarray) -> int:
         assert qs.shape[1] == q.shape[0]
@@ -40,17 +47,15 @@ class NaiveNearest(Nearest):
 
 
 class VectorNearest(Nearest):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, space: Space):
+        super().__init__(space)
 
     def nearest(self, qs: np.ndarray, c: np.ndarray) -> int:
-        inp = qs - c
-        tmp = np.linalg.norm(inp, axis=1)
-        return np.argmin(tmp)
+        dist = self.space.distance_many(qs, c)
+        return np.argmin(dist)
 
     def near(self, qs: np.ndarray, c: np.ndarray, r: float) -> np.ndarray:
-        inp = qs - c
-        norms = np.linalg.norm(inp, axis=1)
-        assert norms.shape[0] == qs.shape[0]
-        valid_mask = norms < r
+        dist = self.space.distance_many(qs, c)
+        assert dist.shape[0] == qs.shape[0]
+        valid_mask = dist < r
         return np.where(valid_mask)[0]

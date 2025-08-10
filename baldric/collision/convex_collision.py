@@ -49,7 +49,7 @@ class ConvexPolygon2dCollisionChecker(CollisionChecker):
     def __init__(
         self,
         space: RigidBody2dSpace,
-        obs: ConvexPolygon2dSet,
+        obs: List[ConvexPolygon2dSet],
         robot: ConvexPolygon2dSet,
         step: float = 1.0,
     ):
@@ -59,11 +59,12 @@ class ConvexPolygon2dCollisionChecker(CollisionChecker):
         self.maxStep = step
 
     def collisionFree(self, q: np.ndarray) -> bool:
-        for o in self.obs.polys:
-            trobot = self.robot.transform(q[0], q[1], q[2]).polys
-            for rpoly in trobot:
-                if gjk(o.pts, rpoly.pts):
-                    return False
+        for o in self.obs:
+            for p in o.polys:
+                trobot = self.robot.transform(q[0], q[1], q[2]).polys
+                for rpoly in trobot:
+                    if gjk(p.pts, rpoly.pts):
+                        return False
         return True
 
     def collisionFreeSegment(self, q0: np.ndarray, q1: np.ndarray) -> bool:

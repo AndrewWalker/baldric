@@ -58,6 +58,7 @@ class PRM(Planner[PRMPlan]):
         es = []
         n = self.qs.shape[0]
         for i in range(n):
+            logger.info(f"connecting {i} of {n} #edges = {len(es)}")
             es += self.connectOne(self.qs, i)
         self.es = es
         return es
@@ -95,5 +96,10 @@ class PRM(Planner[PRMPlan]):
         es += self.connectOne(qs, src)
         es += self.connectOne(qs, dst)
         g = self.constructGraph(qs, es)
-        path = nx.shortest_path(g, src, dst, "weight")
-        return PRMPlan(g, path, qs)
+        try:
+            path = nx.shortest_path(g, src, dst, "weight")
+            return PRMPlan(g, path, qs)
+        except nx.NetworkXNoPath:
+            ncpts = len(list(nx.connected_components(g)))
+            logger.info(f"no path, graph has {ncpts} components")
+        return None
