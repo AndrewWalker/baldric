@@ -4,7 +4,7 @@ from baldric.core import (
     CollisionChecker,
     Planner,
     Goal,
-    EmbeddingFreespaceSampler,
+    FreespaceSampler,
     Configuration,
     Nearest,
 )
@@ -19,5 +19,5 @@ class Problem(Generic[PlanT]):
     space: Space | None = None
     nearest: Nearest | None
     collision_checker: CollisionChecker | None = None
-    sampler: EmbeddingFreespaceSampler
+    sampler: FreespaceSampler
     planner: Planner[PlanT] | None = None

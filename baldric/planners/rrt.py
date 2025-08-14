@@ -2,7 +2,10 @@ import dataclasses
 import numpy as np
 from typing import Iterator, Tuple
 from loguru import logger
-from baldric.core import FreespaceSampler, CollisionChecker, Nearest, Planner
+from baldric.sampler import FreespaceSampler
+from baldric.collision import CollisionChecker
+from baldric.metrics import Nearest
+from .planner import Planner, Goal
 
 
 @dataclasses.dataclass
@@ -81,7 +84,7 @@ class PlannerRRT(Planner[RRTPlan]):
         dist = min(self._eta / dist, 1.0)
         return self.space.interpolate(x, y, dist)
 
-    def plan(self, x_init: np.ndarray, ingoal) -> RRTPlan | None:
+    def plan(self, x_init: np.ndarray, ingoal: Goal) -> RRTPlan | None:
         tree = Tree(maximumNodes=self._n, qdims=self._qdims)
         tree.insert(x_init)
         for i in range(self._n - 1):
@@ -93,7 +96,7 @@ class PlannerRRT(Planner[RRTPlan]):
             x_steer = self.steer(x_near, x_rand)
             if self._colltest.collisionFreeSegment(x_near, x_steer):
                 idx = tree.insert(x_steer, parent=x_near_idx)
-                if ingoal(x_steer):
+                if ingoal.satisified(x_steer):
                     logger.info(f"done early {tree.n}")
                     return RRTPlan(t=tree, soln_idx=idx)
         logger.info("no solution")

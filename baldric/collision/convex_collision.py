@@ -3,7 +3,7 @@ import numpy as np
 from baldric.spaces import RigidBody2dSpace
 from baldric.collision import CollisionChecker
 from baldric.utils import rotation_matrix_2d
-from baldric.gjk import gjk
+from .gjk import gjk
 
 
 class ConvexPolygon2d:
@@ -63,7 +63,7 @@ class ConvexPolygon2dCollisionChecker(CollisionChecker):
         self.maxStep = step
 
     def collisionFree(self, q: np.ndarray) -> bool:
-        for p in self.obs:
+        for p in self.obs.polys:
             trobot = self.robot.transform(q[0], q[1], q[2]).polys
             for rpoly in trobot:
                 if gjk(p.pts, rpoly.pts):

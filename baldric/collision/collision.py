@@ -8,6 +8,10 @@ class CollisionChecker:
     def __init__(self, space: Space):
         self._space = space
 
+    @property
+    def space(self):
+        return self._space
+
     def collisionFree(self, x: np.ndarray) -> bool:
         """Check if a single configuration is collision free"""
         return True

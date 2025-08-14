@@ -13,11 +13,12 @@ from baldric.spaces import RigidBody2dSpace, VectorSpace
 
 
 def test_trivial_checker():
-    checker = CollisionChecker(VectorSpace(dimension=3))
+    space = VectorSpace.unit_box(3)
+    checker = CollisionChecker(space)
 
 
 def test_aabb_checking():
-    space = VectorSpace()
+    space = VectorSpace.unit_box(2)
     o = AABB(np.array([0, 0.0]), np.array([1.0, 1.0]))
     checker = AABBCollisionChecker(space, [o], step=1.0)
     assert not checker.collisionFree(np.array([0, 0.0]))
@@ -28,18 +29,13 @@ def test_aabb_checking():
 
 
 def test_convex_checking():
-    # angular weight selected to be:
-    #  - maximum distance from the origin to a vertex;
-    #  - multipled by two (maximum deviation from origin)
-    #  - mulitpled by 1.45 which is an approximation that slightly over-estimates the impact of rotations
-    weights = np.array([1.0, 1.0, 1.45 * 2 * np.sqrt(2)])
-    space = RigidBody2dSpace(metric_weights=weights)
+    space = RigidBody2dSpace([-1, -1, -np.pi], [2, 2, np.pi])
     r = ConvexPolygon2dSet(
         [ConvexPolygon2d(np.array([[0, 0], [1, 0], [1, 1], [0, 1]]))]
     ).transform(0, 0, 0)
 
     o = r.transform(0, 0, 0)
-    checker = ConvexPolygon2dCollisionChecker(space, [o], r)
+    checker = ConvexPolygon2dCollisionChecker(space, o, r)
     q = np.array([0.0, 0.0, 0.0])
     assert not checker.collisionFree(q)
 

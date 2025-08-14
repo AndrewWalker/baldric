@@ -1,17 +1,26 @@
 import numpy as np
 from typing import List, Union
 from baldric.collision import CollisionChecker
-from baldric.spaces import Configuration
+from baldric.spaces import Space, Configuration
 from typing import Generic, TypeVar
 
 PlanT = TypeVar("PlanT")
 
 
-class DiscreteGoal:
-    location: Configuration
+class Goal:
+    def satisified(self, q):
+        return False
 
 
-Goal = Union[DiscreteGoal]
+class DiscreteGoal(Goal):
+    def __init__(self, location: Configuration, tolerance: float, space: Space):
+        super().__init__()
+        self.location = location
+        self.space = space
+        self.tolerance = tolerance
+
+    def satisified(self, q):
+        return self.space.distance(self.location, q) < self.tolerance
 
 
 class Planner(Generic[PlanT]):

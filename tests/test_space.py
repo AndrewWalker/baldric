@@ -3,12 +3,12 @@ from baldric.spaces import VectorSpace
 
 
 def test_vector_space_dimension():
-    space = VectorSpace()
+    space = VectorSpace.unit_box(2)
     assert space.dimension == 2
 
 
 def test_vector_space_distance():
-    space = VectorSpace()
+    space = VectorSpace.unit_box(2)
     q0 = np.random.random(2)
     assert np.abs(space.distance(q0, q0)) < 1e-5
 
@@ -22,7 +22,7 @@ def test_vector_space_distance():
 
 
 def test_vector_space_interp_many():
-    space = VectorSpace()
+    space = VectorSpace.unit_box(2)
     q0 = np.random.random(2)
     assert np.abs(space.distance(q0, q0)) < 1e-5
 
@@ -33,36 +33,36 @@ def test_vector_space_interp_many():
 
 
 def test_vector_space_piecewise_path_length():
-    space = VectorSpace()
+    space = VectorSpace(np.zeros(2), 3 * np.ones(2))
     path = np.array(
         [
-            [0.0, 0],
             [1.0, 0],
-            [1.0, 2.0],
+            [2.0, 0],
+            [2.0, 2.0],
         ]
     )
     assert np.abs(space.piecewise_path_length(path) - 3.0) < 1e-5
 
 
 def test_vector_space_path_sample():
-    space = VectorSpace(2)
+    space = VectorSpace(np.zeros(2), 3 * np.ones(2))
     path = np.array(
         [
-            [0.0, 0],
             [1.0, 0],
-            [1.0, 2.0],
+            [2.0, 0],
+            [2.0, 2.0],
         ]
     )
     assert np.abs(space.piecewise_path_length(path) - 3.0) < 1e-5
 
 
 def test_vector_space_path_interp():
-    space = VectorSpace()
+    space = VectorSpace(np.zeros(2), 3 * np.ones(2))
     path = np.array(
         [
-            [0.0, 0],
             [1.0, 0],
-            [1.0, 2.0],
+            [2.0, 0],
+            [2.0, 2.0],
         ]
     )
     ss = np.array([0.0, 1.0, 3.0])
@@ -73,8 +73,8 @@ def test_vector_space_path_interp():
 
 
 def test_vector_space_interp_approx_dist():
-    space = VectorSpace()
-    q0 = np.array([0.0, 0.0])
-    q1 = np.array([10.0, 0.0])
+    space = VectorSpace(np.zeros(2), 20 * np.ones(2))
+    q0 = np.array([1.0, 0.0])
+    q1 = np.array([11.0, 0.0])
     pts = space.interpolate_approx_distance(q0, q1, 5.0)
     assert pts.shape[0] == 3

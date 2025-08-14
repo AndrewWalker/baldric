@@ -1,34 +1,45 @@
-from numpy.typing import NDArray
+from numpy.typing import NDArray, ArrayLike
 import numpy as np
-from typing import Tuple
 from loguru import logger
 
 Configuration = NDArray[np.float64]
-ConfigurationSet = NDArray[Tuple[int, int], np.float64]  # type: ignore
+ConfigurationSet = NDArray[np.float64]
 
 
 class Space:
-    def __init__(self, dimension: int, metric_weights: np.ndarray | None = None):
-        self._dimension = dimension
-        if metric_weights is None:
-            self._weights = np.ones(dimension)
-        else:
-            self._weights = metric_weights
+    def __init__(
+        self,
+        low: ArrayLike,
+        high: ArrayLike,
+    ):
+        self._low = np.asarray(low)
+        self._high = np.asarray(high)
+
+        # sizes must match
+        assert len(low) == len(high)
+        self._dimension = len(low)
+
+        # default the weights to something plausible
+        self._weights = np.ones(self._dimension)
 
     @property
     def dimension(self) -> int:
         return self._dimension
 
     def difference(self, q0: Configuration, q1: Configuration):
-        return q1 - q0
+        """Find the difference between configurations as a vector
 
-    def distance(self, q0: Configuration, q1: Configuration) -> float:
-        """Calculate the distance between configurations"""
-        return float(self.distance_many(q0.reshape(1, -1), q1)[0])
+        Required to support a range of topological spaces
+        """
+        return q1 - q0
 
     def distance_many(self, qs: ConfigurationSet, q1: Configuration) -> np.ndarray:
         dq = self.difference(qs, q1)
         return np.sqrt(np.sum(dq * dq * self._weights, axis=1))
+
+    def distance(self, q0: Configuration, q1: Configuration) -> float:
+        """Calculate the distance between configurations"""
+        return float(self.distance_many(q0.reshape(1, -1), q1)[0])
 
     def interpolate(
         self, q0: Configuration, q1: Configuration, s: float
@@ -104,40 +115,3 @@ class Space:
         length = np.sum(diff_lengths)
         ss = self._length_arange(length, step)
         return self.interpolate_piecewise_path(path, ss)
-
-
-class VectorSpace(Space):
-    """R^n"""
-
-    def __init__(self, dimension=2):
-        super().__init__(dimension=dimension)
-
-
-class RigidBody2dSpace(Space):
-    """R^2 . S"""
-
-    def __init__(self):
-        super().__init__(dimension=3, metric_weights=np.ones(3))
-
-    def set_weights(self, weights: np.ndarray):
-        self.metric_weights = weights
-
-    def set_weights_from_pts(self, pts: np.ndarray):
-        L = np.max(np.linalg.norm(pts, axis=1))
-        weights = np.array([1.0, 1.0, 2 * 1.45 * L])
-        self.set_weights(weights)
-
-    @staticmethod
-    def from_points(pts: np.ndarray):
-        space = RigidBody2dSpace()
-        space.set_weights_from_pts(pts)
-        return space
-
-    def normalize_angle(self, angle):
-        res = np.arctan2(np.sin(angle), np.cos(angle))
-        return res
-
-    def difference(self, q0: Configuration, q1: Configuration):
-        dq = (q1 - q0).reshape(-1, self.dimension)
-        dq[:, 2] = self.normalize_angle(dq[:, 2])
-        return dq

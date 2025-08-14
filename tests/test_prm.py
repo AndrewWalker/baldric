@@ -1,28 +1,22 @@
 import numpy as np
-from baldric.sampler import EmbeddingFreespaceSampler
-from baldric.collision.aabb_collision import AABBCollisionChecker, AABB
-from baldric.collision.convex_collision import (
-    ConvexPolygon2dCollisionChecker,
-    ConvexPolygon2dSet,
-    ConvexPolygon2d,
-)
+from baldric.sampler import FreespaceSampler
+from baldric.collision import aabb_collision as box_cc
+from baldric.collision import convex_collision as cvx_cc
 from baldric.spaces import VectorSpace, RigidBody2dSpace
 from baldric.metrics import VectorNearest
-from baldric.planners.prm import PRM, PRMPlan
+from baldric.planners import PlannerPRM, PRMPlan
 
 
 def test_prm_in_r2():
-    space = VectorSpace()
-    checker = AABBCollisionChecker(
+    space = VectorSpace(np.array([0.0, 0.0]), np.array([100.0, 100.0]))
+    checker = box_cc.AABBCollisionChecker(
         space=space,
-        boxes=[AABB(np.array([50.0, 25]), np.array([5.0, 25.0]))],
+        boxes=[box_cc.AABB(np.array([50.0, 25]), np.array([5.0, 25.0]))],
         step=1.0,
     )
-    sampler = EmbeddingFreespaceSampler(
-        np.array([0.0, 0.0]), np.array([100.0, 100.0]), checker
-    )
+    sampler = FreespaceSampler(checker)
     nearest = VectorNearest(space)
-    planner = PRM(sampler, nearest, checker, r=100, n=20)
+    planner = PlannerPRM(sampler, nearest, checker, r=100, n=20)
     planner.prepare()
     q_i = np.array([10.0, 10.0])
     q_f = np.array([90.0, 10.0])
@@ -63,32 +57,34 @@ def robot():
             ]
         ),
     ]
-    return ConvexPolygon2dSet(polys=[ConvexPolygon2d(p) for p in robot])
+    return cvx_cc.ConvexPolygon2dSet(polys=[cvx_cc.ConvexPolygon2d(p) for p in robot])
 
 
 def test_prm_rigidbody2d():
     bot = robot()
-    space = RigidBody2dSpace.from_points(np.vstack([p.pts for p in bot.polys]))
+
     obs_hgt = 30.0
     obs_pts = np.array([[45.0, 0.0], [55.0, 0.0], [55.0, obs_hgt], [45.0, obs_hgt]])
-    obs = [
-        ConvexPolygon2dSet(
-            polys=[
-                ConvexPolygon2d(obs_pts),
-            ]
-        )
-    ]
-    checker = ConvexPolygon2dCollisionChecker(
+    obs = cvx_cc.ConvexPolygon2dSet(
+        polys=[
+            cvx_cc.ConvexPolygon2d(obs_pts),
+        ]
+    )
+
+    space = RigidBody2dSpace(
+        np.array([0.0, 0.0, -np.pi]), np.array([100.0, 100.0, np.pi])
+    )
+    space.set_weights_from_pts(np.vstack([p.pts for p in bot.polys]))
+
+    checker = cvx_cc.ConvexPolygon2dCollisionChecker(
         space=space,
         obs=obs,
         robot=bot,
         step=1.0,
     )
-    sampler = EmbeddingFreespaceSampler(
-        np.array([0.0, 0.0, -np.pi]), np.array([100.0, 100.0, np.pi]), checker
-    )
+    sampler = FreespaceSampler(checker)
     nearest = VectorNearest(space)
-    planner = PRM(sampler, nearest, checker, r=100, n=20)
+    planner = PlannerPRM(sampler, nearest, checker, r=100, n=20)
     planner.prepare()
     q_i = np.array([10.0, 10.0, 0.0])
     q_f = np.array([90.0, 10.0, 0.0])

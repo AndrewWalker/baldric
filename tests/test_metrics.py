@@ -5,7 +5,7 @@ from hypothesis import given, strategies as st
 
 
 def test_nearest_2d():
-    space = VectorSpace()
+    space = VectorSpace(np.zeros(2), np.ones(2))
     n = NaiveNearest(space)
     k = 1000
     qs = np.random.random((k, space.dimension))
@@ -16,7 +16,7 @@ def test_nearest_2d():
 
 
 def test_near_2d():
-    space = VectorSpace()
+    space = VectorSpace(np.zeros(2), np.ones(2))
     n = NaiveNearest(space)
     k = 1000
     qs = np.random.random((k, space.dimension))
@@ -29,10 +29,10 @@ def test_near_2d():
     k=st.integers(min_value=1, max_value=1000), d=st.integers(min_value=2, max_value=4)
 )
 def test_comparison_between_near_metrics(k: int, d: int):
-    space = VectorSpace(dimension=d)
+    space = VectorSpace(np.zeros(d), np.ones(d))
     n = NaiveNearest(space)
     v = VectorNearest(space)
-    qs = np.random.random((k, space.dimension))
+    qs = np.random.random((k, d))
     q = np.random.random(space.dimension)
     res_n = n.nearest(qs, q)
     res_v = v.nearest(qs, q)
@@ -45,10 +45,10 @@ def test_comparison_between_near_metrics(k: int, d: int):
     r=st.floats(min_value=0.0, max_value=2.0),
 )
 def test_comparison_between_nearest_metrics(k: int, d: int, r: float):
-    space = VectorSpace(dimension=d)
+    space = VectorSpace(np.zeros(d), np.ones(d))
     n = NaiveNearest(space)
     v = VectorNearest(space)
-    qs = np.random.random((k, space.dimension))
+    qs = np.random.random((k, d))
     q = np.random.random(space.dimension)
     res_n = n.near(qs, q, r)
     res_v = v.near(qs, q, r)
