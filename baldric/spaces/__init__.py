@@ -1,1 +1,1 @@
-from .space import Space, VectorSpace, RigidBody2dSpace  # noqa: F401
+from .space import Configuration, ConfigurationSet, Space, VectorSpace, RigidBody2dSpace  # noqa: F401

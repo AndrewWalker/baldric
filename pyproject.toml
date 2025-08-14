@@ -12,6 +12,7 @@ dependencies = [
     "matplotlib>=3.10.5",
     "networkx>=3.5",
     "numpy>=2.3.2",
+    "pydantic>=2.11.7",
     "pytest>=8.4.1",
     "ruff>=0.12.8",
     "scipy>=1.16.1",

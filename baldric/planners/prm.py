@@ -16,7 +16,7 @@ class PRMPlan:
         return np.vstack([self.qs[i] for i in self.path_indices])
 
 
-class PRM(Planner[PRMPlan]):
+class PlannerPRM(Planner[PRMPlan]):
     def __init__(
         self,
         sampler: FreespaceSampler,

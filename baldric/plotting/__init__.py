@@ -2,6 +2,7 @@ from typing import List
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from baldric.problem import Problem
 from baldric.collision import CollisionChecker
 from baldric.collision.aabb_collision import AABB, AABBCollisionChecker
 from baldric.collision.convex_collision import (
@@ -50,3 +51,16 @@ def plot_tree(ax, tree: Tree):
         qs = np.vstack([q_i, q_c])
         plt.plot(qs[:, 0], qs[:, 1], "b-")
         plt.plot(qs[:, 0], qs[:, 1], "r.")
+
+
+def plot_problem(problem: Problem, dst: str):
+    maybePlan = problem.planner.plan(problem.init, problem.goal)
+    if maybePlan is not None:
+        fig = plt.figure()
+        ax = plt.gca()
+        plot_collision_checker(ax, problem.collision_checker)
+        lo = problem.sampler._low
+        hi = problem.sampler._high
+        ax.set_xlim([lo[0], hi[1]])
+        ax.set_ylim([lo[1], hi[1]])
+    plt.savefig(dst)

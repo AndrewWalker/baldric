@@ -1,19 +1,28 @@
 import numpy as np
+from typing import List, Union
 from baldric.collision import CollisionChecker
+from baldric.spaces import Configuration
 from typing import Generic, TypeVar
 
 PlanT = TypeVar("PlanT")
+
+
+class DiscreteGoal:
+    location: Configuration
+
+
+Goal = Union[DiscreteGoal]
 
 
 class Planner(Generic[PlanT]):
     def __init__(self, colltest: CollisionChecker):
         self._colltest = colltest
 
-    def collisionFree(self, x: np.ndarray) -> bool:
+    def collisionFree(self, x: Configuration) -> bool:
         return self._colltest.collisionFree(x)
 
-    def collisionFreeSegment(self, q_0: np.ndarray, q_1: np.ndarray) -> bool:
+    def collisionFreeSegment(self, q_0: Configuration, q_1: Configuration) -> bool:
         return self._colltest.collisionFreeSegment(q_0, q_1)
 
-    def plan(self, x_init: np.ndarray) -> PlanT | None:
+    def plan(self, x_init: Configuration, goal: Goal) -> PlanT | None:
         return None
