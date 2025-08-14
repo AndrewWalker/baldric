@@ -16,11 +16,11 @@ class RigidBody2dSpace(Space):
         weights = np.array([1.0, 1.0, 2 * 1.45 * L])
         self.set_weights(weights)
 
-    @staticmethod
-    def from_points(pts: np.ndarray):
-        space = RigidBody2dSpace()
-        space.set_weights_from_pts(pts)
-        return space
+    # @staticmethod
+    # def from_points(pts: np.ndarray):
+    #     space = RigidBody2dSpace()
+    #     space.set_weights_from_pts(pts)
+    #     return space
 
     def normalize_angle(self, angle):
         res = np.arctan2(np.sin(angle), np.cos(angle))

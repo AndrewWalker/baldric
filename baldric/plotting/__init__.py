@@ -38,8 +38,7 @@ def plot_collision_checker(ax, checker: CollisionChecker, **kwargs):
             for box in checker.boxes:
                 plot_aabb(ax, box)
         case ConvexPolygon2dCollisionChecker():
-            for o in checker.obs:
-                plot_polyset(ax, o)
+            plot_polyset(ax, checker.obs)
 
 
 def plot_tree(ax, tree: Tree):
