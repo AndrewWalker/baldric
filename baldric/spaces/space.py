@@ -22,6 +22,15 @@ class Space:
         # default the weights to something plausible
         self._weights = np.ones(self._dimension)
 
+    def valid(self, q) -> bool:
+        if len(q) != self._dimension:
+            return False
+        if np.any(q < self._low):
+            return False
+        if np.any(q > self._high):
+            return False
+        return True
+
     @property
     def dimension(self) -> int:
         return self._dimension
@@ -41,16 +50,19 @@ class Space:
         """Calculate the distance between configurations"""
         return float(self.distance_many(q0.reshape(1, -1), q1)[0])
 
+    def normalise(self, q: Configuration) -> Configuration:
+        return q
+
     def interpolate(
         self, q0: Configuration, q1: Configuration, s: float
     ) -> Configuration:
         """Interpolate between configurations"""
         if s < 0.0 or s > 1.0:
             snew = max(min(s, 1.0), 0.0)
-            logger.debug("clamped interpolant {s} to {snew}")
+            logger.debug(f"clamped interpolant {s} to {snew}")
             s = snew
         dq = self.difference(q0, q1)
-        return q0 + s * dq
+        return self.normalise(q0 + s * dq)
 
     def interpolate_many(
         self, q0: Configuration, q1: Configuration, ss: np.ndarray

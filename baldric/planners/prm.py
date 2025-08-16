@@ -35,6 +35,8 @@ class PRMPlan:
 
     @property
     def path(self):
+        if self.path_indices is None:
+            return None
         return np.vstack([self.qs[i] for i in self.path_indices])
 
 

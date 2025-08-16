@@ -33,5 +33,5 @@ class Planner(Generic[PlanT]):
     def collisionFreeSegment(self, q_0: Configuration, q_1: Configuration) -> bool:
         return self._colltest.collisionFreeSegment(q_0, q_1)
 
-    def plan(self, x_init: Configuration, goal: Goal) -> PlanT | None:
-        return None
+    def plan(self, x_init: Configuration, goal: Goal) -> PlanT:
+        raise NotImplementedError

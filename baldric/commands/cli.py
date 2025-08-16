@@ -3,7 +3,7 @@ import yaml
 from loguru import logger
 from .factory import load_problem, create_problem
 from .samples import sample_problem_configs
-from baldric.plotting import plot_problem
+from baldric.plotting import plot_problem, plot_problem_anim
 
 
 @click.command()
@@ -25,10 +25,14 @@ def create_samples():
 
 @click.command()
 @click.option("--name", "-n", type=str, required=True)
-def solve_sample(name: str):
+@click.option("--anim", "-a", is_flag=True)
+def solve_sample(name: str, anim: bool):
     problem_config = sample_problem_configs()[name]
     p = create_problem(problem_config)
-    plot_problem(p, name + ".png")
+    if anim:
+        plot_problem_anim(p, name + ".gif")
+    else:
+        plot_problem(p, name + ".png")
 
 
 @click.command()

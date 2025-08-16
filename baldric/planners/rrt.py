@@ -29,7 +29,7 @@ class Tree:
 
     @property
     def edges(self) -> Iterator[Tuple[int, int]]:
-        return ((i, self.parent[i]) for i in range(self.n))
+        return ((i, int(self.parent[i])) for i in range(1, self.n))
 
     def insert(self, q: np.ndarray, parent: int | None = None) -> int:
         if parent is None:
@@ -46,7 +46,10 @@ class RRTPlan:
     t: Tree
     soln_idx: int
 
+    @property
     def path(self):
+        if self.soln_idx is None:
+            return None
         soln = []
         idx: int | None = self.soln_idx
         while True:
@@ -55,8 +58,8 @@ class RRTPlan:
                 break
             soln.append(idx)
         soln.reverse()
-        print(soln)
-        return np.vstack([self.t.configuration[i, :] for i in soln])
+        pth = np.vstack([self.t.configuration[i, :] for i in soln])
+        return pth
 
 
 class PlannerRRT(Planner[RRTPlan]):
@@ -84,20 +87,30 @@ class PlannerRRT(Planner[RRTPlan]):
         dist = min(self._eta / dist, 1.0)
         return self.space.interpolate(x, y, dist)
 
+    def nearest(self, qs, q):
+        return self._nearest.nearest(qs, q)
+
+    def freeSample(self):
+        x_rand = None
+        while x_rand is None:
+            x_rand = self._sampler.sampleFree()
+        return x_rand
+
     def plan(self, x_init: np.ndarray, ingoal: Goal) -> RRTPlan | None:
         tree = Tree(maximumNodes=self._n, qdims=self._qdims)
         tree.insert(x_init)
-        for i in range(self._n - 1):
-            x_rand = self._sampler.sampleFree()
-            if x_rand is None:
-                continue
-            x_near_idx = self._nearest.nearest(tree.activeConfigurations, x_rand)
+        soln_idx: int | None = None
+        while tree.n < self._n:
+            x_rand = self.freeSample()
+            x_near_idx = self.nearest(tree.activeConfigurations, x_rand)
             x_near = tree.configuration[x_near_idx]
             x_steer = self.steer(x_near, x_rand)
             if self._colltest.collisionFreeSegment(x_near, x_steer):
                 idx = tree.insert(x_steer, parent=x_near_idx)
                 if ingoal.satisified(x_steer):
+                    soln_idx = idx
                     logger.info(f"done early {tree.n}")
-                    return RRTPlan(t=tree, soln_idx=idx)
-        logger.info("no solution")
-        return None
+                    break
+        if soln_idx is None:
+            logger.info("no solution")
+        return RRTPlan(t=tree, soln_idx=soln_idx)

@@ -32,9 +32,9 @@ def test_convex_checking():
     space = RigidBody2dSpace([-1, -1, -np.pi], [2, 2, np.pi])
     r = ConvexPolygon2dSet(
         [ConvexPolygon2d(np.array([[0, 0], [1, 0], [1, 1], [0, 1]]))]
-    ).transform(0, 0, 0)
+    ).transform(np.zeros(3))
 
-    o = r.transform(0, 0, 0)
+    o = r.transform(np.zeros(3))
     checker = ConvexPolygon2dCollisionChecker(space, o, r)
     q = np.array([0.0, 0.0, 0.0])
     assert not checker.collisionFree(q)

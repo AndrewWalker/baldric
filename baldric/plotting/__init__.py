@@ -2,6 +2,7 @@ from typing import List
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import matplotlib.animation as animation
 from baldric.problem import Problem
 from baldric.collision import CollisionChecker
 from baldric.collision.aabb_collision import AABB, AABBCollisionChecker
@@ -12,6 +13,7 @@ from baldric.collision.convex_collision import (
 )
 from baldric.planners.rrt import Tree
 from baldric.planners.prm import PRMPlan
+from baldric.planners.rrt import RRTPlan
 
 
 def plot_aabb(ax, box: AABB, color="red"):
@@ -24,10 +26,12 @@ def plot_aabb(ax, box: AABB, color="red"):
     ax.add_patch(p)
 
 
-def plot_polyset(ax, polyset: ConvexPolygon2dSet, color="red") -> List[patches.Polygon]:
+def plot_polyset(
+    ax, polyset: ConvexPolygon2dSet, color="red", alpha=1.0
+) -> List[patches.Polygon]:
     handles = []
     for poly in polyset.polys:
-        p = patches.Polygon(poly.pts, color=color)
+        p = patches.Polygon(poly.pts, color=color, alpha=alpha, zorder=4)
         ax.add_patch(p)
         handles.append(p)
     return handles
@@ -49,34 +53,107 @@ def plot_tree(ax, tree: Tree):
         q_i = tree.configuration[n_i, :]
         q_c = tree.configuration[n_child_i, :]
         qs = np.vstack([q_i, q_c])
-        plt.plot(qs[:, 0], qs[:, 1], "b-")
+        plt.plot(qs[:, 0], qs[:, 1], "g-")
         plt.plot(qs[:, 0], qs[:, 1], "r.")
 
 
 def plot_prm_plan(ax, plan: PRMPlan):
     ax.plot(plan.qs[:, 0], plan.qs[:, 1], "b.")
     es = np.asarray(plan.es)
+
     for i in range(es.shape[0]):
         u, v = es[i, :]
         q0 = plan.qs[u]
         q1 = plan.qs[v]
         eqs = np.vstack([q0, q1])
-        ax.plot(eqs[:, 0], eqs[:, 1], "b-")
+        ax.plot(eqs[:, 0], eqs[:, 1], "g-", alpha=0.2)
     if plan.path_indices is not None:
         ax.plot(plan.path[:, 0], plan.path[:, 1], "r-")
 
 
+def plot_rrt_plan(ax, plan: RRTPlan):
+    qs = plan.t.activeConfigurations
+    ax.plot(qs[:, 0], qs[:, 1], "b.")
+    for i, j in plan.t.edges:
+        q0 = qs[i, :]
+        q1 = qs[j, :]
+        eqs = np.vstack([q0, q1])
+        ax.plot(eqs[:, 0], eqs[:, 1], "g-", alpha=0.4)
+    if plan.soln_idx is not None:
+        path = plan.path
+        ax.plot(path[:, 0], path[:, 1], "r-")
+
+
+def plot_path_configurations(ax, path, bot: ConvexPolygon2dSet):
+    for i in range(path.shape[0]):
+        q = path[i, :]
+        plot_polyset(ax, bot.transform(q), color="grey", alpha=0.4)
+
+
 def plot_problem(problem: Problem, dst: str):
-    maybePlan = problem.planner.plan(problem.init, problem.goal)
-    if maybePlan is not None:
-        fig = plt.figure()
-        ax = plt.gca()
-        plot_collision_checker(ax, problem.collision_checker)
-        match maybePlan:
-            case PRMPlan():
-                plot_prm_plan(ax, maybePlan)
-        lo = problem.space._low
-        hi = problem.space._high
-        ax.set_xlim([lo[0], hi[1]])
-        ax.set_ylim([lo[1], hi[1]])
+    fig = plt.figure()
+    ax = plt.gca()
+    ax.grid()
+    plot_collision_checker(ax, problem.collision_checker)
+
+    plan = problem.planner.plan(problem.init, problem.goal)
+    match plan:
+        case PRMPlan():
+            plot_prm_plan(ax, plan)
+        case RRTPlan():
+            plot_rrt_plan(ax, plan)
+
+    match problem.collision_checker:
+        case ConvexPolygon2dCollisionChecker():
+            bot = problem.collision_checker.robot
+            plot_polyset(ax, bot.transform(problem.init), "green")
+            path = plan.path
+            if plan.path is not None:
+                plot_path_configurations(ax, path, bot)
+
+    lo = problem.space._low
+    hi = problem.space._high
+    ax.set_xlim([lo[0], hi[1]])
+    ax.set_ylim([lo[1], hi[1]])
+    ax.set_aspect("equal")
     plt.savefig(dst)
+
+
+def plot_problem_anim(problem: Problem, dst: str):
+    fig = plt.figure()
+    ax = plt.gca()
+    ax.grid()
+    ax.set_aspect("equal")
+    lo = problem.space._low
+    hi = problem.space._high
+    ax.set_xlim([lo[0], hi[1]])
+    ax.set_ylim([lo[1], hi[1]])
+
+    plot_collision_checker(ax, problem.collision_checker)
+
+    plan = problem.planner.plan(problem.init, problem.goal)
+
+    match plan:
+        case PRMPlan():
+            plot_prm_plan(ax, plan)
+        case RRTPlan():
+            plot_rrt_plan(ax, plan)
+
+    checker = problem.collision_checker
+    match checker:
+        case ConvexPolygon2dCollisionChecker():
+            bot = checker.robot
+            if plan.path is not None:
+                pts = problem.space.interpolate_piecewise_path_with_step(plan.path, 0.5)
+                handles = plot_polyset(ax, bot.transform(problem.init), "grey")
+
+                def animate(i):
+                    pt = pts[i, :]
+                    rt = bot.transform(pt)
+                    for h, p in zip(handles, rt.polys):
+                        h.set_xy(p.pts)
+
+                ani = animation.FuncAnimation(
+                    fig, animate, interval=10, frames=len(pts)
+                )
+                ani.save(dst, writer="imagemagick", fps=10)

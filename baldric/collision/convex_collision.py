@@ -41,10 +41,10 @@ class ConvexPolygon2dSet:
     def all_points(self):
         return np.vstack([p.pts for p in self.polys])
 
-    def transform(self, x, y, theta):
+    def transform(self, q):
         res = []
         for p in self.polys:
-            pt = p.transform(x, y, theta)
+            pt = p.transform(q[0], q[1], q[2])
             res.append(pt)
         return ConvexPolygon2dSet(res)
 
@@ -63,8 +63,9 @@ class ConvexPolygon2dCollisionChecker(CollisionChecker):
         self.maxStep = step
 
     def collisionFree(self, q: np.ndarray) -> bool:
+        assert self.space.valid(q)
         for p in self.obs.polys:
-            trobot = self.robot.transform(q[0], q[1], q[2]).polys
+            trobot = self.robot.transform(q).polys
             for rpoly in trobot:
                 if gjk(p.pts, rpoly.pts):
                     return False

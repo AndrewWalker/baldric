@@ -4,7 +4,7 @@ from baldric.collision import aabb_collision as box_cc
 from baldric.collision import convex_collision as cvx_cc
 from baldric.spaces import VectorSpace, RigidBody2dSpace
 from baldric.metrics import VectorNearest
-from baldric.planners import PlannerPRM, PRMPlan
+from baldric.planners import PlannerPRM, PRMPlan, DiscreteGoal
 
 
 def test_prm_in_r2():
@@ -20,7 +20,7 @@ def test_prm_in_r2():
     planner.prepare()
     q_i = np.array([10.0, 10.0])
     q_f = np.array([90.0, 10.0])
-    plan = planner.plan(q_i, q_f)
+    plan = planner.plan(q_i, DiscreteGoal(location=q_f, tolerance=1.0, space=space))
     assert plan is not None
     assert isinstance(plan, PRMPlan)
     assert isinstance(plan.path_indices, list)
@@ -88,7 +88,7 @@ def test_prm_rigidbody2d():
     planner.prepare()
     q_i = np.array([10.0, 10.0, 0.0])
     q_f = np.array([90.0, 10.0, 0.0])
-    plan = planner.plan(q_i, q_f)
+    plan = planner.plan(q_i, DiscreteGoal(location=q_f, tolerance=1.0, space=space))
     assert plan is not None
     assert isinstance(plan, PRMPlan)
     assert isinstance(plan.path_indices, list)
