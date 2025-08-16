@@ -1,14 +1,10 @@
 from dataclasses import dataclass
 from typing import TypeVar, Generic
-from baldric.core import (
-    Space,
-    CollisionChecker,
-    Planner,
-    Goal,
-    FreespaceSampler,
-    Configuration,
-    Nearest,
-)
+from baldric.spaces import Space, Configuration
+from baldric.sampler import FreespaceSampler
+from baldric.planners import Planner, Goal
+from baldric.collision import CollisionChecker
+from baldric.metrics import Nearest
 
 
 PlanT = TypeVar("PlanT")

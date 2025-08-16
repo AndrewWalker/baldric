@@ -17,3 +17,13 @@ dependencies = [
     "ruff>=0.12.8",
     "scipy>=1.16.1",
 ]
+
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+baldric-solve = "baldric.commands.cli:solve"
+baldric-write-samples = "baldric.commands.cli:create_samples"
+baldric-solve-sample = "baldric.commands.cli:solve_sample"
+baldric-solve-all-samples = "baldric.commands.cli:solve_all_samples"

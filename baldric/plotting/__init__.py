@@ -11,6 +11,7 @@ from baldric.collision.convex_collision import (
     ConvexPolygon2dCollisionChecker,
 )
 from baldric.planners.rrt import Tree
+from baldric.planners.prm import PRMPlan
 
 
 def plot_aabb(ax, box: AABB, color="red"):
@@ -52,14 +53,30 @@ def plot_tree(ax, tree: Tree):
         plt.plot(qs[:, 0], qs[:, 1], "r.")
 
 
+def plot_prm_plan(ax, plan: PRMPlan):
+    ax.plot(plan.qs[:, 0], plan.qs[:, 1], "b.")
+    es = np.asarray(plan.es)
+    for i in range(es.shape[0]):
+        u, v = es[i, :]
+        q0 = plan.qs[u]
+        q1 = plan.qs[v]
+        eqs = np.vstack([q0, q1])
+        ax.plot(eqs[:, 0], eqs[:, 1], "b-")
+    if plan.path_indices is not None:
+        ax.plot(plan.path[:, 0], plan.path[:, 1], "r-")
+
+
 def plot_problem(problem: Problem, dst: str):
     maybePlan = problem.planner.plan(problem.init, problem.goal)
     if maybePlan is not None:
         fig = plt.figure()
         ax = plt.gca()
         plot_collision_checker(ax, problem.collision_checker)
-        lo = problem.sampler._low
-        hi = problem.sampler._high
+        match maybePlan:
+            case PRMPlan():
+                plot_prm_plan(ax, maybePlan)
+        lo = problem.space._low
+        hi = problem.space._high
         ax.set_xlim([lo[0], hi[1]])
         ax.set_ylim([lo[1], hi[1]])
     plt.savefig(dst)

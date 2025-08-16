@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
-from baldric.sampler import EmbeddingFreespaceSampler
+from baldric.sampler import FreespaceSampler
 from baldric.collision.aabb_collision import AABBCollisionChecker, AABB
 from baldric.collision.convex_collision import (
     ConvexPolygon2dCollisionChecker,
@@ -10,9 +10,11 @@ from baldric.collision.convex_collision import (
 )
 from baldric.spaces import VectorSpace, RigidBody2dSpace
 from baldric.metrics import VectorNearest
-from baldric.planners.prm import PRM, PRMPlan
+from baldric.planners import Goal, DiscreteGoal
+from baldric.planners.prm import PlannerPRM, PRMPlan
 from baldric.plotting import plot_collision_checker, plot_polyset, plot_tree
 from baldric.planners.rrt import PlannerRRT
+from baldric.problem import Problem
 
 
 def robot():
@@ -48,33 +50,55 @@ def robot():
 def sample1():
     qlow = np.array([0.0, 0.0])
     qhigh = np.array([100.0, 100.0])
-    space = VectorSpace(2)
-    checker = AABBCollisionChecker(
-        space=space,
+    p = Problem()
+    p.space = VectorSpace(
+        qlow,
+        qhigh,
+    )
+    p.init = np.array([10.0, 10.0])
+    p.goal = DiscreteGoal(np.array([90.0, 10.0]), 5.0, p.space)
+    p.collision_checker = AABBCollisionChecker(
+        space=p.space,
         boxes=[AABB(np.array([50.0, 25]), np.array([5.0, 25.0]))],
         step=1.0,
     )
-    sampler = EmbeddingFreespaceSampler(qlow, qhigh, checker)
-    nearest = VectorNearest()
-    planner = PRM(sampler, nearest, checker, r=10.0, n=1000)
-    planner.prepare()
-    q_i = np.array([10.0, 10.0])
-    q_f = np.array([90.0, 10.0])
-    plan = planner.plan(q_i, q_f)
+    p.sampler = FreespaceSampler(p.collision_checker)
+    p.nearest = VectorNearest(p.space)
+    p.planner = PlannerPRM(p.sampler, p.nearest, p.collision_checker, r=10.0, n=1000)
+    return p
 
-    ax = plt.gca()
-    plot_collision_checker(ax, checker)
-    ax.set_xlim([qlow[0], qhigh[0]])
-    ax.set_ylim([qlow[1], qhigh[1]])
-    pts = space.interpolate_piecewise_path_with_step(plan.path, 5.0)
-    # plt.plot(planner.qs[:, 0], planner.qs[:, 1], "gx")
-    plt.plot(pts[:, 0], pts[:, 1], "b.")
-    plt.savefig("out.png")
+    # qlow = np.array([0.0, 0.0])
+    # qhigh = np.array([100.0, 100.0])
+    # space = VectorSpace(2)
+    # checker = AABBCollisionChecker(
+    #     space=space,
+    #     boxes=[AABB(np.array([50.0, 25]), np.array([5.0, 25.0]))],
+    #     step=1.0,
+    # )
+    # sampler = EmbeddingFreespaceSampler(qlow, qhigh, checker)
+    # nearest = VectorNearest()
+    # planner = PlannerPRM(sampler, nearest, checker, r=10.0, n=1000)
+    # planner.prepare()
+    # q_i =
+    # q_f = np.array([90.0, 10.0])
+    # plan = planner.plan(q_i, q_f)
+
+    # ax = plt.gca()
+    # plot_collision_checker(ax, checker)
+    # ax.set_xlim([qlow[0], qhigh[0]])
+    # ax.set_ylim([qlow[1], qhigh[1]])
+    # pts = space.interpolate_piecewise_path_with_step(plan.path, 5.0)
+    # # plt.plot(planner.qs[:, 0], planner.qs[:, 1], "gx")
+    # plt.plot(pts[:, 0], pts[:, 1], "b.")
+    # plt.savefig("out.png")
 
 
 def sample2():
     bot = robot()
-    space = RigidBody2dSpace.from_points(np.vstack([p.pts for p in bot.polys]))
+    qlow = np.array([0.0, 0.0, -np.pi])
+    qhigh = np.array([100.0, 100.0, np.pi])
+    space = RigidBody2dSpace(qlow, qhigh)
+    space.set_weights_from_pts(np.vstack([p.pts for p in bot.polys]))
     obs_hgt = 40.0
     obs_wid = 1.0
     obs_pts = np.array(
@@ -85,14 +109,12 @@ def sample2():
             [50.0 - obs_wid, obs_hgt],
         ]
     )
-    obs = [
-        ConvexPolygon2dSet(
-            polys=[
-                ConvexPolygon2d(obs_pts),
-                ConvexPolygon2d(obs_pts + np.array([0.0, (100 - obs_hgt)])),
-            ]
-        )
-    ]
+    obs = ConvexPolygon2dSet(
+        polys=[
+            ConvexPolygon2d(obs_pts),
+            ConvexPolygon2d(obs_pts + np.array([0.0, (100 - obs_hgt)])),
+        ]
+    )
 
     checker = ConvexPolygon2dCollisionChecker(
         space=space,
@@ -100,11 +122,10 @@ def sample2():
         robot=bot,
         step=1.0,
     )
-    qlow = np.array([0.0, 0.0, -np.pi])
-    qhigh = np.array([100.0, 100.0, np.pi])
-    sampler = EmbeddingFreespaceSampler(qlow, qhigh, checker)
+
+    sampler = FreespaceSampler(checker)
     nearest = VectorNearest(space)
-    planner = PRM(sampler, nearest, checker, r=20.0, n=1000)
+    planner = PlannerPRM(sampler, nearest, checker, r=20.0, n=1000)
     planner.prepare()
     # q_i = np.array([10.0, 10.0, 0.0])
     # q_f = np.array([90.0, 10.0, 0.0])
@@ -135,15 +156,16 @@ def sample2():
 
 
 def rrt_sample1():
-    space = VectorSpace()
+    qlow = np.array([0.0, 0.0])
+    qhigh = np.array([100.0, 100.0])
+
+    space = VectorSpace(qlow, qhigh)
     checker = AABBCollisionChecker(
         space=space,
         boxes=[AABB(np.array([50.0, 25]), np.array([5.0, 25.0]))],
         step=1.0,
     )
-    qlow = np.array([0.0, 0.0])
-    qhigh = np.array([100.0, 100.0])
-    sampler = EmbeddingFreespaceSampler(qlow, qhigh, checker)
+    sampler = FreespaceSampler(checker)
     nearest = VectorNearest(space)
     planner = PlannerRRT(sampler, checker, nearest, n=2000, eta=3.0)
     q_i = np.array([10.0, 10.0])
@@ -161,7 +183,10 @@ def rrt_sample1():
 
 def rrt_sample2():
     bot = robot()
-    space = RigidBody2dSpace.from_points(np.vstack([p.pts for p in bot.polys]))
+    qlow = np.array([0.0, 0.0, -np.pi])
+    qhigh = np.array([100.0, 100.0, np.pi])
+    space = RigidBody2dSpace(qlow, qhigh)
+    space.set_weights_from_pts(np.vstack([p.pts for p in bot.polys]))
     obs_hgt = 40.0
     obs_wid = 1.0
     obs_pts = np.array(
@@ -172,14 +197,12 @@ def rrt_sample2():
             [50.0 - obs_wid, obs_hgt],
         ]
     )
-    obs = [
-        ConvexPolygon2dSet(
-            polys=[
-                ConvexPolygon2d(obs_pts),
-                ConvexPolygon2d(obs_pts + np.array([0.0, (100 - obs_hgt)])),
-            ]
-        )
-    ]
+    obs = ConvexPolygon2dSet(
+        polys=[
+            ConvexPolygon2d(obs_pts),
+            ConvexPolygon2d(obs_pts + np.array([0.0, (100 - obs_hgt)])),
+        ]
+    )
 
     checker = ConvexPolygon2dCollisionChecker(
         space=space,
@@ -187,18 +210,14 @@ def rrt_sample2():
         robot=bot,
         step=1.0,
     )
-    qlow = np.array([0.0, 0.0, -np.pi])
-    qhigh = np.array([100.0, 100.0, np.pi])
-    sampler = EmbeddingFreespaceSampler(qlow, qhigh, checker)
+
+    sampler = FreespaceSampler(checker)
     nearest = VectorNearest(space)
     planner = PlannerRRT(sampler, checker, nearest, n=1000, eta=5.0)
     q_i = np.array([10.0, 10.0, np.pi / 2])
     q_f = np.array([90.0, 10.0, 0.0])
 
-    def ingoal(q):
-        return space.distance(q, q_f) < 5.0
-
-    plan = planner.plan(q_i, ingoal)
+    plan = planner.plan(q_i, DiscreteGoal(q_f, 5.0, space))
 
     fig = plt.figure()
     ax = plt.gca()
@@ -223,8 +242,43 @@ def rrt_sample2():
     ani.save("rrt_demo.gif", writer="imagemagick", fps=10)
 
 
+from baldric.commands.config import (
+    VectorSpace2dConfig,
+    ProblemConfig,
+    DiscreteGoalConfig,
+    AABBCheckerConfig,
+    PlannerConfig,
+    RRTConfig,
+    PRMConfig,
+)  # noqa: E402
+
+
+def sample1():
+    p = ProblemConfig(
+        planner=PRMConfig(n=10, r=1.0),
+        space=VectorSpace2dConfig(q_min=[0, 0], q_max=[10, 10]),
+        checker=AABBCheckerConfig(obs=[], collsion_step=0.1),
+        goal=DiscreteGoalConfig(location=[9, 1], tolerance=1.0),
+        initial=[1, 1],
+    )
+    # p.init = np.array([10.0, 10.0])
+    # p.goal = DiscreteGoal(np.array([90.0, 10.0]), 5.0, p.space)
+    # p.collision_checker = AABBCollisionChecker(
+    #     space=p.space,
+    #     boxes=[AABB(np.array([50.0, 25]), np.array([5.0, 25.0]))],
+    #     step=1.0,
+    # )
+    # p.sampler = FreespaceSampler(p.collision_checker)
+    # p.nearest = VectorNearest(p.space)
+    # p.planner = PlannerPRM(p.sampler, p.nearest, p.collision_checker, r=10.0, n=1000)
+    return p
+
+
 if __name__ == "__main__":
-    # sample1()
+    import yaml
+
+    p = sample1()
+    print(yaml.safe_dump(p.model_dump()))
     # sample2()
     # rrt_sample1()
-    rrt_sample2()
+    # rrt_sample2()
