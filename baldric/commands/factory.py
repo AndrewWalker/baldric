@@ -52,10 +52,6 @@ def create_space(cfg: config.ProblemConfig):
             )
 
 
-def create_polygon(cfg: config.Polygon2dConfig):
-    return ConvexPolygon2d(pts=np.array(cfg.pts))
-
-
 def create_aabb(cfg: config.AABBConfig):
     return AABB(np.array(cfg.center), np.array(cfg.limits))
 
@@ -63,7 +59,7 @@ def create_aabb(cfg: config.AABBConfig):
 def create_polygon_set(cfg: config.Polygon2dSetConfig):
     polys = []
     for poly in cfg.polys:
-        polys.append(ConvexPolygon2d(pts=np.array(poly)))
+        polys.append(ConvexPolygon2d(pts=np.array(poly.pts)))
     return ConvexPolygon2dSet(polys=polys)
 
 
@@ -71,10 +67,10 @@ def create_checker(cfg: config.ProblemConfig, space: Space):
     checker = cfg.checker
     match checker:
         case config.Polygon2dCheckerConfig():
-            obs = create_polygon(checker.obstacles)
-            bot = create_polygon(checker.robot)
+            obs = create_polygon_set(checker.obstacles)
+            bot = create_polygon_set(checker.robot)
             res = ConvexPolygon2dCollisionChecker(
-                space=space, obs=obs, bot=bot, step=checker.collsion_step
+                space=space, obs=obs, robot=bot, step=checker.collsion_step
             )
             return res
         case config.AABBCheckerConfig():

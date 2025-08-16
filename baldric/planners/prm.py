@@ -57,7 +57,7 @@ class PlannerPRM(Planner[PRMPlan]):
 
     def sample(self):
         qs = []
-        for i in range(self.n):
+        while len(qs) < self.n:
             q = self.sampler.sampleFree()
             if q is not None:
                 qs.append(q)

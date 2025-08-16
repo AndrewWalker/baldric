@@ -17,36 +17,6 @@ from baldric.planners.rrt import PlannerRRT
 from baldric.problem import Problem
 
 
-def robot():
-    robot = [
-        np.array(
-            [
-                [-9, 20],
-                [-11, 20],
-                [-11, -1],
-                [-9, -1],
-            ]
-        ),
-        np.array(
-            [
-                [9, 20],
-                [9, -1],
-                [11, -1],
-                [11, 20],
-            ]
-        ),
-        np.array(
-            [
-                [-10.5, 1],
-                [-10.5, -1],
-                [10.5, -1],
-                [10.5, 1],
-            ]
-        ),
-    ]
-    return ConvexPolygon2dSet(polys=[ConvexPolygon2d(p) for p in robot])
-
-
 def sample1():
     qlow = np.array([0.0, 0.0])
     qhigh = np.array([100.0, 100.0])

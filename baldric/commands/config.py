@@ -12,7 +12,7 @@ class Polygon2dConfig(BaseModel):
 
 
 class Polygon2dSetConfig(BaseModel):
-    polys: List[List[float]] = Field(default=[])
+    polys: List[Polygon2dConfig] = Field(default=[])
 
 
 class RigidSpace2dConfig(BaseModel):
@@ -35,7 +35,7 @@ class AABBCheckerConfig(BaseModel):
 
 class Polygon2dCheckerConfig(BaseModel):
     robot: Polygon2dSetConfig
-    obstacles: Polygon2dSetConfig
+    obstacles: Polygon2dSetConfig | None
     collsion_step: float = 1.0
     kind: Literal["Polygon2dCheckerConfig"] = "Polygon2dCheckerConfig"
 
