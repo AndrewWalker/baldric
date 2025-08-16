@@ -7,8 +7,10 @@ wheels/
 *.egg-info
 
 # Virtual environments
+htmlcov/
 .venv
 .hypothesis
+.coverage
 *.yml
 *.png
 *.gif

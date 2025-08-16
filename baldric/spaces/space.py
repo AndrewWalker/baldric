@@ -6,6 +6,55 @@ Configuration = NDArray[np.float64]
 ConfigurationSet = NDArray[np.float64]
 
 
+# class Space:
+#     def valid(self, q) -> bool:
+#         raise NotImplementedError
+
+#     @property
+#     def dimension(self) -> int:
+#         raise NotImplementedError
+
+#     def difference(self, q0: Configuration, q1: Configuration):
+#         raise NotImplementedError
+
+#     def distance(self, q0: Configuration, q1: Configuration) -> float:
+#         raise NotImplementedError
+
+#     def interpolate(
+#         self, q0: Configuration, q1: Configuration, s: float
+#     ) -> Configuration:
+#         raise NotImplementedError
+
+#     def normalise(self, q: Configuration) -> Configuration:
+#         return q
+
+
+# class PiecewisePath:
+#     def __init__(self, space: Space, qs: Configuration):
+#         self._space = space
+#         self._qs = qs
+
+#         # lengths and cummulative lengths
+#         lengths = np.zeros(self._qs.shape[0]-1)
+#         cumlen = np.zeros(self._qs.shape[0])
+#         for i in range(self._qs.shape[0]):
+#             qi = self._qs[i]
+#             qj = self._qs[i + 1]
+#             lengths[i] = self._space.distance(qi, qj)
+#         cumlen[1:] = np.cumsum(lengths)
+#         self.lengths = lengths
+#         self.cumlen = cumlen
+
+#     @property
+#     def length(self):
+#         return np.sum(self.piecewise_lengths())
+
+#     def piecewise_lengths(self):
+#         return self.
+
+#     def interpolate(self, s):
+
+
 class Space:
     def __init__(
         self,

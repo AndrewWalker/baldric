@@ -72,7 +72,7 @@ class ConvexPolygon2dCollisionChecker(CollisionChecker):
         return True
 
     def collisionFreeSegment(self, q0: np.ndarray, q1: np.ndarray) -> bool:
-        pts = self._space.interpolate_approx_distance(q0, q1, self.maxStep)
+        pts = self.space.interpolate_approx_distance(q0, q1, self.maxStep)
         for q in pts:
             if not self.collisionFree(q):
                 return False
