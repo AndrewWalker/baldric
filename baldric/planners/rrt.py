@@ -105,6 +105,8 @@ class PlannerRRT(Planner[RRTPlan]):
         return x_rand
 
     def plan(self, x_init: np.ndarray, ingoal: Goal) -> RRTPlan | None:
+        logger.info("solving")
+        assert self.collisionFree(x_init)
         tree = Tree(maximumNodes=self._n, qdims=self._qdims)
         tree.insert(x_init)
         soln_idx: int | None = None
@@ -121,4 +123,5 @@ class PlannerRRT(Planner[RRTPlan]):
                     break
         if soln_idx is None:
             logger.info("no solution")
+        logger.info("solving:done")
         return RRTPlan(self.space, t=tree, soln_idx=soln_idx)

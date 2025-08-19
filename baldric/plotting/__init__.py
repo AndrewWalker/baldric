@@ -93,6 +93,24 @@ def plot_path_configurations(ax: plt.Axes, path: PiecewisePath, bot: ConvexPolyg
         plot_polyset(ax, bot.transform(q), color="grey", alpha=0.4)
 
 
+def plot_without_solve(problem: Problem, dst: str):
+    fig = plt.figure()
+    ax = plt.gca()
+    ax.grid()
+    plot_collision_checker(ax, problem.collision_checker)
+    match problem.collision_checker:
+        case ConvexPolygon2dCollisionChecker():
+            bot = problem.collision_checker.robot
+            plot_polyset(ax, bot.transform(problem.init), "green")
+
+    lo = problem.space._low
+    hi = problem.space._high
+    ax.set_xlim([lo[0], hi[1]])
+    ax.set_ylim([lo[1], hi[1]])
+    ax.set_aspect("equal")
+    plt.savefig(dst)
+
+
 def plot_problem(problem: Problem, dst: str):
     fig = plt.figure()
     ax = plt.gca()
@@ -146,8 +164,9 @@ def plot_problem_anim(problem: Problem, dst: str):
     match checker:
         case ConvexPolygon2dCollisionChecker():
             bot = checker.robot
-            if plan.path is not None:
-                pts = problem.space.interpolate_piecewise_path_with_step(plan.path, 0.5)
+            path = plan.path
+            if path is not None:
+                pts = path.interpolate_with_step(0.5)
                 handles = plot_polyset(ax, bot.transform(problem.init), "grey")
 
                 def animate(i):

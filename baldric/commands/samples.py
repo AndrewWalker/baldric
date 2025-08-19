@@ -26,6 +26,26 @@ def bar_robot():
     return Polygon2dSetConfig(polys=[Polygon2dConfig(pts=p) for p in polys])
 
 
+def l_robot():
+    L = 20.0
+    W = 0.5
+    polys = [box(-W, -W, L, 2 * W), box(-W, -W, 2 * W, L)]
+
+    return Polygon2dSetConfig(polys=[Polygon2dConfig(pts=p) for p in polys])
+
+
+def u_robot():
+    L = 15.0
+    W = 0.5
+    polys = [
+        box(-L / 2, -W, L, 2 * W),
+        box(-L / 2, -W, 2 * W, L),
+        box(L / 2 - W, -W, 2 * W, L),
+    ]
+
+    return Polygon2dSetConfig(polys=[Polygon2dConfig(pts=p) for p in polys])
+
+
 def narrow_possage(scale, hgt=0.35):
     obs_hgt = hgt
     obs_wid = 0.005
@@ -93,12 +113,12 @@ def reverse_problem(p: ProblemConfig):
     return p
 
 
-def rrt_narrow_passage():
+def rrt_narrow_passage(bot, n=1500):
     p = ProblemConfig(
         planner=RRTConfig(n=1500, eta=3.0),
         space=RigidSpace2dConfig(q_min=[0, 0, -np.pi], q_max=[100, 100, np.pi]),
         checker=Polygon2dCheckerConfig(
-            robot=bar_robot(),
+            robot=bot,
             obstacles=narrow_possage(100.0, hgt=0.45),
             collsion_step=0.1,
         ),
@@ -108,8 +128,8 @@ def rrt_narrow_passage():
     return p
 
 
-def rrt_narrow_passage_rev():
-    p = rrt_narrow_passage()
+def rrt_narrow_passage_rev(bot):
+    p = rrt_narrow_passage(bot)
     return reverse_problem(p)
 
 
@@ -118,6 +138,8 @@ def sample_problem_configs():
         "prm_empty": prm_empty(),
         "rrt_empty": rrt_empty(),
         "prm_narrow_passage": prm_narrow_passage(),
-        "rrt_narrow_passage": rrt_narrow_passage(),
-        "rrt_narrow_passage_rev": rrt_narrow_passage_rev(),
+        "rrt_narrow_passage": rrt_narrow_passage(bar_robot()),
+        "rrt_narrow_passage_rev": rrt_narrow_passage_rev(bar_robot()),
+        "rrt_narrow_passage_l": rrt_narrow_passage(l_robot()),
+        "rrt_narrow_passage_u": rrt_narrow_passage(u_robot()),
     }

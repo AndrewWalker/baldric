@@ -3,7 +3,7 @@ import yaml
 from loguru import logger
 from .factory import load_problem, create_problem
 from .samples import sample_problem_configs
-from baldric.plotting import plot_problem, plot_problem_anim
+from baldric.plotting import plot_problem, plot_problem_anim, plot_without_solve
 
 
 @click.command()
@@ -26,13 +26,17 @@ def create_samples():
 @click.command()
 @click.option("--name", "-n", type=str, required=True)
 @click.option("--anim", "-a", is_flag=True)
-def solve_sample(name: str, anim: bool):
+@click.option("--dryrun", "-d", is_flag=True, help="plot without solve")
+def solve_sample(name: str, anim: bool, dryrun: bool):
     problem_config = sample_problem_configs()[name]
     p = create_problem(problem_config)
-    if anim:
+    if dryrun:
+        plot_without_solve(p, name + ".png")
+    elif anim:
         plot_problem_anim(p, name + ".gif")
     else:
         plot_problem(p, name + ".png")
+    print(p.collision_checker.checks)
 
 
 @click.command()

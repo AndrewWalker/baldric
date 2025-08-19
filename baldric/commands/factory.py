@@ -90,7 +90,8 @@ def create_problem(cfg: config.ProblemConfig):
     p.planner = create_planner(cfg, p.collision_checker)
     match p.space, p.collision_checker:
         case RigidBody2dSpace(), ConvexPolygon2dCollisionChecker():
-            p.space.set_weights_from_pts(p.collision_checker.robot.all_points)
+            # p.space.set_weights_from_pts(p.collision_checker.robot.all_points)
+            p.space.set_weights(np.array([1.0, 1.0, 0.0]))
     return p
 
 

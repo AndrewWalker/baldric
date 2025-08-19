@@ -67,12 +67,14 @@ class ConvexPolygon2dCollisionChecker(CollisionChecker):
         self.obs = obs
         self.robot = robot
         self.maxStep = step
+        self.checks = 0
 
     def collisionFree(self, q: np.ndarray) -> bool:
         assert self.space.valid(q)
         for p in self.obs.polys:
             trobot = self.robot.transform(q).polys
             for rpoly in trobot:
+                self.checks += 1
                 if gjk(p.pts, rpoly.pts):
                     return False
         return True

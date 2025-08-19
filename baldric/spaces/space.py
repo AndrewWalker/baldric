@@ -131,7 +131,7 @@ class PiecewisePath:
             res.append(q)
         return np.vstack(res)
 
-    def interpolate_with_step(self, path: ConfigurationSet, step: float) -> ConfigurationSet:
+    def interpolate_with_step(self, step: float) -> ConfigurationSet:
         """Interpolate the piecewise path with a minimum step size
 
         step : float
@@ -140,4 +140,4 @@ class PiecewisePath:
         nsteps = np.ceil(self.length / step)
         nsteps = int(max(nsteps, 1)) + 1
         ss = np.linspace(0.0, self.length, nsteps)
-        return self.interpolate(path, ss)
+        return self.interpolate(ss)
