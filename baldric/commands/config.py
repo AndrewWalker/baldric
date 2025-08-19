@@ -21,6 +21,13 @@ class RigidSpace2dConfig(BaseModel):
     kind: Literal["rigid2d"] = "rigid2d"
 
 
+class DubinsSpaceConfig(BaseModel):
+    q_min: List[float]
+    q_max: List[float]
+    rho: float
+    kind: Literal["dubins"] = "dubins"
+
+
 class VectorSpace2dConfig(BaseModel):
     q_min: List[float] = Field(default=[])
     q_max: List[float] = Field(default=[])
@@ -43,18 +50,18 @@ class Polygon2dCheckerConfig(BaseModel):
 class RRTConfig(BaseModel):
     n: int
     eta: float
-    kind: Literal["RRTConfig"] = "RRTConfig"
+    kind: Literal["rrt"] = "rrt"
 
 
 class PRMConfig(BaseModel):
     n: int
     r: float
-    kind: Literal["PRMConfig"] = "PRMConfig"
+    kind: Literal["prm"] = "prm"
 
 
 PlannerConfig = Union[RRTConfig, PRMConfig]
 
-SpaceConfig = Union[RigidSpace2dConfig, VectorSpace2dConfig]
+SpaceConfig = Union[RigidSpace2dConfig, VectorSpace2dConfig, DubinsSpaceConfig]
 
 CheckerConfig = Union[AABBCheckerConfig, Polygon2dCheckerConfig]
 

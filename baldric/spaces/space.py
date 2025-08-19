@@ -6,55 +6,6 @@ Configuration = NDArray[np.float64]
 ConfigurationSet = NDArray[np.float64]
 
 
-# class Space:
-#     def valid(self, q) -> bool:
-#         raise NotImplementedError
-
-#     @property
-#     def dimension(self) -> int:
-#         raise NotImplementedError
-
-#     def difference(self, q0: Configuration, q1: Configuration):
-#         raise NotImplementedError
-
-#     def distance(self, q0: Configuration, q1: Configuration) -> float:
-#         raise NotImplementedError
-
-#     def interpolate(
-#         self, q0: Configuration, q1: Configuration, s: float
-#     ) -> Configuration:
-#         raise NotImplementedError
-
-#     def normalise(self, q: Configuration) -> Configuration:
-#         return q
-
-
-# class PiecewisePath:
-#     def __init__(self, space: Space, qs: Configuration):
-#         self._space = space
-#         self._qs = qs
-
-#         # lengths and cummulative lengths
-#         lengths = np.zeros(self._qs.shape[0]-1)
-#         cumlen = np.zeros(self._qs.shape[0])
-#         for i in range(self._qs.shape[0]):
-#             qi = self._qs[i]
-#             qj = self._qs[i + 1]
-#             lengths[i] = self._space.distance(qi, qj)
-#         cumlen[1:] = np.cumsum(lengths)
-#         self.lengths = lengths
-#         self.cumlen = cumlen
-
-#     @property
-#     def length(self):
-#         return np.sum(self.piecewise_lengths())
-
-#     def piecewise_lengths(self):
-#         return self.
-
-#     def interpolate(self, s):
-
-
 class Space:
     def __init__(
         self,
@@ -102,9 +53,7 @@ class Space:
     def normalise(self, q: Configuration) -> Configuration:
         return q
 
-    def interpolate(
-        self, q0: Configuration, q1: Configuration, s: float
-    ) -> Configuration:
+    def interpolate(self, q0: Configuration, q1: Configuration, s: float) -> Configuration:
         """Interpolate between configurations"""
         if s < 0.0 or s > 1.0:
             snew = max(min(s, 1.0), 0.0)
@@ -113,66 +62,82 @@ class Space:
         dq = self.difference(q0, q1)
         return self.normalise(q0 + s * dq)
 
-    def interpolate_many(
-        self, q0: Configuration, q1: Configuration, ss: np.ndarray
-    ) -> ConfigurationSet:
+    def interpolate_many(self, q0: Configuration, q1: Configuration, ss: np.ndarray) -> ConfigurationSet:
         lst = []
         for i in range(ss.shape[0]):
             q = self.interpolate(q0, q1, ss[i])
             lst.append(q)
         return np.vstack(lst)
 
-    def interpolate_linspace(
-        self, q0: Configuration, q1: Configuration, n: int
-    ) -> np.ndarray:
-        ss = np.linspace(0.0, 1.0, n)
-        return self.interpolate_many(q0, q1, ss)
-
-    def _length_arange(self, length, step) -> np.ndarray:
-        nsteps = np.ceil(length / step)
-        nsteps = int(max(nsteps, 1)) + 1
-        return np.linspace(0.0, length, nsteps)
-
-    def interpolate_approx_distance(
-        self, q0: Configuration, q1: Configuration, step: float
-    ) -> ConfigurationSet:
+    def interpolate_approx_distance(self, q0: Configuration, q1: Configuration, step: float) -> ConfigurationSet:
+        # required for collision detection
         dist = self.distance(q0, q1)
-        ss = self._length_arange(dist, step) / dist
+        nsteps = np.ceil(dist / step)
+        nsteps = int(max(nsteps, 1)) + 1
+        ss = np.linspace(0.0, 1.0, nsteps)
         return self.interpolate_many(q0, q1, ss)
 
-    def piecewise_path_length(self, path: ConfigurationSet) -> float:
-        path_cnt = path.shape[0]
-        diff_lengths = np.zeros(path_cnt)
-        for i in range(path_cnt - 1):
-            diff_lengths[i + 1] = self.distance(path[i, :], path[i + 1, :])
-        return np.sum(diff_lengths)
 
-    def interpolate_piecewise_path(
-        self, path: ConfigurationSet, ss: np.ndarray
-    ) -> ConfigurationSet:
-        path_cnt = path.shape[0]
-        diff_lengths = np.zeros(path_cnt)
-        for i in range(path_cnt - 1):
-            diff_lengths[i + 1] = self.distance(path[i, :], path[i + 1, :])
-        cumlen = np.cumsum(diff_lengths)
-        xs = np.searchsorted(cumlen, ss, side="right")
-        xs = np.minimum(np.maximum(xs - 1, 0), path_cnt - 2)
-        delta = ss - cumlen[xs]
-        gaps = diff_lengths[xs + 1]
+class PiecewisePath:
+    """A piecewise path is made up of paths between configurations"""
+
+    def __init__(self, space: Space, qs: ConfigurationSet):
+        self._space = space
+        self._qs = qs
+
+        # lengths and cummulative lengths
+        lengths = np.zeros(self._qs.shape[0] - 1)
+        cumlen = np.zeros(self._qs.shape[0])
+        for i in range(self.nsegments):
+            qi = self._qs[i]
+            qj = self._qs[i + 1]
+            lengths[i] = self._space.distance(qi, qj)
+        cumlen[1:] = np.cumsum(lengths)
+        self.segment_lengths = lengths
+        self.cumlen = cumlen
+        self._total_length = np.sum(self.segment_lengths)
+
+    @property
+    def configurations(self):
+        return self._qs
+
+    @property
+    def nconfigurations(self):
+        return self._qs.shape[0]
+
+    @property
+    def nsegments(self):
+        return self._qs.shape[0] - 1
+
+    @property
+    def length(self):
+        return self._total_length
+
+    def interpolate(self, ss: np.ndarray) -> ConfigurationSet:
+        """Interpolate the piecewise path
+
+        ss : np.ndarray
+            Scalars from 0..length
+        """
+        xs = np.searchsorted(self.cumlen, ss, side="right")
+        xs = np.minimum(np.maximum(xs - 1, 0), self.nsegments - 1)
+        delta = ss - self.cumlen[xs]
+        gaps = self.segment_lengths[xs]
         ss = delta / gaps
         res = []
         for i in range(len(ss)):
-            q = self.interpolate(path[xs[i]], path[xs[i] + 1], ss[i])
+            # bare interpolation falls back to the space interpolator
+            q = self._space.interpolate(self._qs[xs[i]], self._qs[xs[i] + 1], ss[i])
             res.append(q)
         return np.vstack(res)
 
-    def interpolate_piecewise_path_with_step(
-        self, path: ConfigurationSet, step: float
-    ) -> ConfigurationSet:
-        path_cnt = path.shape[0]
-        diff_lengths = np.zeros(path_cnt)
-        for i in range(path_cnt - 1):
-            diff_lengths[i + 1] = self.distance(path[i, :], path[i + 1, :])
-        length = np.sum(diff_lengths)
-        ss = self._length_arange(length, step)
-        return self.interpolate_piecewise_path(path, ss)
+    def interpolate_with_step(self, path: ConfigurationSet, step: float) -> ConfigurationSet:
+        """Interpolate the piecewise path with a minimum step size
+
+        step : float
+            value to traverse along the path
+        """
+        nsteps = np.ceil(self.length / step)
+        nsteps = int(max(nsteps, 1)) + 1
+        ss = np.linspace(0.0, self.length, nsteps)
+        return self.interpolate(path, ss)

@@ -10,7 +10,7 @@ from baldric.collision.convex_collision import (
 from baldric.problem import Problem
 from baldric.metrics import VectorNearest
 from baldric.sampler import FreespaceSampler
-from baldric.spaces import Space, RigidBody2dSpace, VectorSpace
+from baldric.spaces import Space, RigidBody2dSpace, VectorSpace, DubinsSpace
 from baldric.planners import Planner, Goal, DiscreteGoal
 from baldric.planners.prm import PlannerPRM
 from baldric.planners.rrt import PlannerRRT
@@ -41,15 +41,14 @@ def create_planner(cfg: config.ProblemConfig, checker: CollisionChecker):
 
 
 def create_space(cfg: config.ProblemConfig):
-    match cfg.space:
+    space = cfg.space
+    match space:
         case config.VectorSpace2dConfig():
-            return VectorSpace(
-                low=np.array(cfg.space.q_min), high=np.array(cfg.space.q_max)
-            )
+            return VectorSpace(low=np.array(space.q_min), high=np.array(space.q_max))
         case config.RigidSpace2dConfig():
-            return RigidBody2dSpace(
-                low=np.array(cfg.space.q_min), high=np.array(cfg.space.q_max)
-            )
+            return RigidBody2dSpace(low=np.array(space.q_min), high=np.array(space.q_max))
+        case config.DubinsSpaceConfig():
+            return DubinsSpace(low=np.array(space.q_min), high=np.array(space.q_max), rho=space.rho)
 
 
 def create_aabb(cfg: config.AABBConfig):
@@ -69,9 +68,7 @@ def create_checker(cfg: config.ProblemConfig, space: Space):
         case config.Polygon2dCheckerConfig():
             obs = create_polygon_set(checker.obstacles)
             bot = create_polygon_set(checker.robot)
-            res = ConvexPolygon2dCollisionChecker(
-                space=space, obs=obs, robot=bot, step=checker.collsion_step
-            )
+            res = ConvexPolygon2dCollisionChecker(space=space, obs=obs, robot=bot, step=checker.collsion_step)
             return res
         case config.AABBCheckerConfig():
             aabbs = [create_aabb(aabb) for aabb in checker.obstacles]
@@ -81,9 +78,7 @@ def create_checker(cfg: config.ProblemConfig, space: Space):
 def create_goal(cfg: config.GoalConfig, space: Space):
     match cfg:
         case config.DiscreteGoalConfig():
-            return DiscreteGoal(
-                location=np.asarray(cfg.location), tolerance=cfg.tolerance, space=space
-            )
+            return DiscreteGoal(location=np.asarray(cfg.location), tolerance=cfg.tolerance, space=space)
 
 
 def create_problem(cfg: config.ProblemConfig):

@@ -34,9 +34,7 @@ class DubinsSpace(Space):
         for q0 in qs:
             dists.append(self.distance(q0, q1))
 
-    def interpolate(
-        self, q0: Configuration, q1: Configuration, s: float
-    ) -> Configuration:
+    def interpolate(self, q0: Configuration, q1: Configuration, s: float) -> Configuration:
         """Interpolate between configurations"""
         dq = self.difference(q0, q1)
         return self.normalise(q0 + s * dq)

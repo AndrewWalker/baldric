@@ -2,6 +2,7 @@ import dataclasses
 import numpy as np
 from typing import Iterator, Tuple
 from loguru import logger
+from baldric.spaces import Space, PiecewisePath
 from baldric.sampler import FreespaceSampler
 from baldric.collision import CollisionChecker
 from baldric.metrics import Nearest
@@ -43,11 +44,11 @@ class Tree:
 
 @dataclasses.dataclass
 class RRTPlan:
+    space: Space
     t: Tree
     soln_idx: int
 
-    @property
-    def path(self):
+    def path_indices(self):
         if self.soln_idx is None:
             return None
         soln = []
@@ -58,8 +59,15 @@ class RRTPlan:
                 break
             soln.append(idx)
         soln.reverse()
-        pth = np.vstack([self.t.configuration[i, :] for i in soln])
-        return pth
+        return soln
+
+    @property
+    def path(self):
+        indices = self.path_indices()
+        if indices is None:
+            return None
+        pth = np.vstack([self.t.configuration[i, :] for i in indices])
+        return PiecewisePath(self.space, pth)
 
 
 class PlannerRRT(Planner[RRTPlan]):
@@ -113,4 +121,4 @@ class PlannerRRT(Planner[RRTPlan]):
                     break
         if soln_idx is None:
             logger.info("no solution")
-        return RRTPlan(t=tree, soln_idx=soln_idx)
+        return RRTPlan(self.space, t=tree, soln_idx=soln_idx)

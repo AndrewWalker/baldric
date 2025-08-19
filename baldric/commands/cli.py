@@ -38,5 +38,6 @@ def solve_sample(name: str, anim: bool):
 @click.command()
 def solve_all_samples():
     for name, problem_config in sample_problem_configs().items():
+        logger.info("solving", name)
         p = create_problem(problem_config)
         plot_problem(p, name + ".png")

@@ -5,12 +5,8 @@ def assert_2d_polygon(vertices):
     """Assert that the polygon is 2D with proper shape"""
     vertices = np.asarray(vertices)
     assert vertices.ndim == 2, f"Vertices must be 2D array, got {vertices.ndim}D"
-    assert vertices.shape[1] == 2, (
-        f"Vertices must have 2 coordinates (x,y), got {vertices.shape[1]}"
-    )
-    assert vertices.shape[0] >= 3, (
-        f"Polygon must have at least 3 vertices, got {vertices.shape[0]}"
-    )
+    assert vertices.shape[1] == 2, f"Vertices must have 2 coordinates (x,y), got {vertices.shape[1]}"
+    assert vertices.shape[0] >= 3, f"Polygon must have at least 3 vertices, got {vertices.shape[0]}"
     return vertices
 
 

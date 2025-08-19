@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.animation as animation
 from baldric.problem import Problem
+from baldric.spaces import PiecewisePath
 from baldric.collision import CollisionChecker
 from baldric.collision.aabb_collision import AABB, AABBCollisionChecker
 from baldric.collision.convex_collision import (
@@ -16,7 +17,7 @@ from baldric.planners.prm import PRMPlan
 from baldric.planners.rrt import RRTPlan
 
 
-def plot_aabb(ax, box: AABB, color="red"):
+def plot_aabb(ax: plt.Axes, box: AABB, color="red"):
     p = patches.Rectangle(
         box._qcen - box._qlim,
         width=box._qlim[0] * 2,
@@ -26,9 +27,7 @@ def plot_aabb(ax, box: AABB, color="red"):
     ax.add_patch(p)
 
 
-def plot_polyset(
-    ax, polyset: ConvexPolygon2dSet, color="red", alpha=1.0
-) -> List[patches.Polygon]:
+def plot_polyset(ax: plt.Axes, polyset: ConvexPolygon2dSet, color="red", alpha=1.0) -> List[patches.Polygon]:
     handles = []
     for poly in polyset.polys:
         p = patches.Polygon(poly.pts, color=color, alpha=alpha, zorder=4)
@@ -37,7 +36,7 @@ def plot_polyset(
     return handles
 
 
-def plot_collision_checker(ax, checker: CollisionChecker, **kwargs):
+def plot_collision_checker(ax: plt.Axes, checker: CollisionChecker, **kwargs):
     match checker:
         case AABBCollisionChecker():
             for box in checker.boxes:
@@ -46,7 +45,7 @@ def plot_collision_checker(ax, checker: CollisionChecker, **kwargs):
             plot_polyset(ax, checker.obs)
 
 
-def plot_tree(ax, tree: Tree):
+def plot_tree(ax: plt.Axes, tree: Tree):
     for n_i, n_child_i in tree.edges:
         if n_child_i == -1:
             continue
@@ -57,7 +56,13 @@ def plot_tree(ax, tree: Tree):
         plt.plot(qs[:, 0], qs[:, 1], "r.")
 
 
-def plot_prm_plan(ax, plan: PRMPlan):
+def plot_piecewise_path(ax: plt.Axes, path: PiecewisePath | None):
+    if path is not None:
+        qs = path.configurations
+        ax.plot(qs[:, 0], qs[:, 1], "r-")
+
+
+def plot_prm_plan(ax: plt.Axes, plan: PRMPlan):
     ax.plot(plan.qs[:, 0], plan.qs[:, 1], "b.")
     es = np.asarray(plan.es)
 
@@ -67,11 +72,10 @@ def plot_prm_plan(ax, plan: PRMPlan):
         q1 = plan.qs[v]
         eqs = np.vstack([q0, q1])
         ax.plot(eqs[:, 0], eqs[:, 1], "g-", alpha=0.2)
-    if plan.path_indices is not None:
-        ax.plot(plan.path[:, 0], plan.path[:, 1], "r-")
+    plot_piecewise_path(ax, plan.path)
 
 
-def plot_rrt_plan(ax, plan: RRTPlan):
+def plot_rrt_plan(ax: plt.Axes, plan: RRTPlan):
     qs = plan.t.activeConfigurations
     ax.plot(qs[:, 0], qs[:, 1], "b.")
     for i, j in plan.t.edges:
@@ -79,14 +83,13 @@ def plot_rrt_plan(ax, plan: RRTPlan):
         q1 = qs[j, :]
         eqs = np.vstack([q0, q1])
         ax.plot(eqs[:, 0], eqs[:, 1], "g-", alpha=0.4)
-    if plan.soln_idx is not None:
-        path = plan.path
-        ax.plot(path[:, 0], path[:, 1], "r-")
+    plot_piecewise_path(ax, plan.path)
 
 
-def plot_path_configurations(ax, path, bot: ConvexPolygon2dSet):
-    for i in range(path.shape[0]):
-        q = path[i, :]
+def plot_path_configurations(ax: plt.Axes, path: PiecewisePath, bot: ConvexPolygon2dSet):
+    qs = path.configurations
+    for i in range(path.nconfigurations):
+        q = qs[i]
         plot_polyset(ax, bot.transform(q), color="grey", alpha=0.4)
 
 
@@ -153,7 +156,5 @@ def plot_problem_anim(problem: Problem, dst: str):
                     for h, p in zip(handles, rt.polys):
                         h.set_xy(p.pts)
 
-                ani = animation.FuncAnimation(
-                    fig, animate, interval=10, frames=len(pts)
-                )
+                ani = animation.FuncAnimation(fig, animate, interval=10, frames=len(pts))
                 ani.save(dst, writer="imagemagick", fps=10)

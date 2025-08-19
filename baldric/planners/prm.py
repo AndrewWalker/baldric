@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import numpy as np
 import networkx as nx
 from loguru import logger
+from baldric.spaces import Space, PiecewisePath
 from baldric.sampler import FreespaceSampler
 from baldric.collision import CollisionChecker
 from baldric.metrics import Nearest
@@ -17,17 +18,14 @@ def unit_ball_measure(dim: int):
 def neighbour_radius(space_measure: float, dim: int, num_states: int):
     inverse_dim = 1.0 / dim
     space_measure_ratio = space_measure / unit_ball_measure(dim)
-    prm_constant = (
-        2 * (1 + inverse_dim) ** inverse_dim * space_measure_ratio**inverse_dim
-    )
+    prm_constant = 2 * (1 + inverse_dim) ** inverse_dim * space_measure_ratio**inverse_dim
     gamma_scale = 2.0
-    return (
-        gamma_scale * prm_constant * (math.log(num_states) / num_states) ** inverse_dim
-    )
+    return gamma_scale * prm_constant * (math.log(num_states) / num_states) ** inverse_dim
 
 
 @dataclass
 class PRMPlan:
+    space: Space
     g: nx.Graph
     qs: np.ndarray
     es: np.ndarray
@@ -37,7 +35,8 @@ class PRMPlan:
     def path(self):
         if self.path_indices is None:
             return None
-        return np.vstack([self.qs[i] for i in self.path_indices])
+        qs = np.vstack([self.qs[i] for i in self.path_indices])
+        return PiecewisePath(self.space, qs)
 
 
 class PlannerPRM(Planner[PRMPlan]):
@@ -56,6 +55,10 @@ class PlannerPRM(Planner[PRMPlan]):
         self.sampler = sampler
         self.nearest = nearest
         self._prepared = False
+
+    @property
+    def space(self):
+        return self._colltest._space
 
     def sample(self):
         qs = []
@@ -119,7 +122,7 @@ class PlannerPRM(Planner[PRMPlan]):
         except nx.NetworkXNoPath:
             ncpts = len(list(nx.connected_components(g)))
             logger.info(f"no path, graph has {ncpts} components")
-        return PRMPlan(g=g, qs=qs, es=es, path_indices=path)
+        return PRMPlan(space=self.space, g=g, qs=qs, es=es, path_indices=path)
 
     def resolve_goal(self, goal: Goal):
         match goal:

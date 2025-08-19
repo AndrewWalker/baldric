@@ -59,9 +59,7 @@ def mod2pi(theta: float):
     return theta % (2 * np.pi)
 
 
-def dubins_intermediate_results(
-    q0: ArrayLike, q1: ArrayLike, rho: float
-) -> DubinsIntermediateResults:
+def dubins_intermediate_results(q0: ArrayLike, q1: ArrayLike, rho: float) -> DubinsIntermediateResults:
     q0 = np.asarray(q0)
     q1 = np.asarray(q1)
     assert rho > 0.0
@@ -138,21 +136,15 @@ def dubins_LSR(state: DubinsIntermediateResults):
     p_sq = -2 + (state.d_sq) + (2 * state.c_ab) + (2 * state.d * (state.sa + state.sb))
     if p_sq >= 0:
         p = np.sqrt(p_sq)
-        tmp0 = np.atan2(
-            (-state.ca - state.cb), (state.d + state.sa + state.sb)
-        ) - np.atan2(-2.0, p)
-        return np.array(
-            [mod2pi(tmp0 - state.alpha), p, mod2pi(tmp0 - mod2pi(state.beta))]
-        )
+        tmp0 = np.atan2((-state.ca - state.cb), (state.d + state.sa + state.sb)) - np.atan2(-2.0, p)
+        return np.array([mod2pi(tmp0 - state.alpha), p, mod2pi(tmp0 - mod2pi(state.beta))])
 
 
 def dubins_RSL(state: DubinsIntermediateResults):
     p_sq = -2 + state.d_sq + (2 * state.c_ab) - (2 * state.d * (state.sa + state.sb))
     if p_sq >= 0:
         p = np.sqrt(p_sq)
-        tmp0 = np.atan2(
-            (state.ca + state.cb), (state.d - state.sa - state.sb)
-        ) - np.atan2(2.0, p)
+        tmp0 = np.atan2((state.ca + state.cb), (state.d - state.sa - state.sb)) - np.atan2(2.0, p)
         return np.array(
             [
                 mod2pi(state.alpha - tmp0),
@@ -163,9 +155,7 @@ def dubins_RSL(state: DubinsIntermediateResults):
 
 
 def dubins_RLR(state: DubinsIntermediateResults):
-    tmp0 = (
-        6.0 - state.d_sq + 2 * state.c_ab + 2 * state.d * (state.sa - state.sb)
-    ) / 8.0
+    tmp0 = (6.0 - state.d_sq + 2 * state.c_ab + 2 * state.d * (state.sa - state.sb)) / 8.0
     phi = np.atan2(state.ca - state.cb, state.d - state.sa + state.sb)
     if np.abs(tmp0) <= 1:
         p = mod2pi((2 * np.pi) - np.acos(tmp0))
@@ -174,16 +164,12 @@ def dubins_RLR(state: DubinsIntermediateResults):
 
 
 def dubins_LRL(state: DubinsIntermediateResults):
-    tmp0 = (
-        6.0 - state.d_sq + 2 * state.c_ab + 2 * state.d * (state.sb - state.sa)
-    ) / 8.0
+    tmp0 = (6.0 - state.d_sq + 2 * state.c_ab + 2 * state.d * (state.sb - state.sa)) / 8.0
     phi = np.atan2(state.ca - state.cb, state.d + state.sa - state.sb)
     if np.abs(tmp0) <= 1:
         p = mod2pi(2 * np.pi - np.acos(tmp0))
         t = mod2pi(-state.alpha - phi + p / 2.0)
-        return np.array(
-            [t, p, mod2pi(mod2pi(state.beta) - state.alpha - t + mod2pi(p))]
-        )
+        return np.array([t, p, mod2pi(mod2pi(state.beta) - state.alpha - t + mod2pi(p))])
 
 
 # double dubins_segment_length( DubinsPath* path, int i )

@@ -2,7 +2,7 @@ import numpy as np
 from baldric.sampler import FreespaceSampler
 from baldric.collision import aabb_collision as box_cc
 from baldric.collision import convex_collision as cvx_cc
-from baldric.spaces import VectorSpace, RigidBody2dSpace
+from baldric.spaces import VectorSpace, RigidBody2dSpace, PiecewisePath
 from baldric.metrics import VectorNearest
 from baldric.planners import PlannerPRM, PRMPlan, DiscreteGoal
 
@@ -27,7 +27,8 @@ def test_prm_in_r2():
     # we can calculate a rough analytic lower bound here
     # 2 * sqrt(2) * 40 ~ 112 units. this is enough to show
     # the planner didn't bypass the obstacles
-    assert space.piecewise_path_length(plan.path) > 112.0
+    path = plan.path
+    assert path.length > 112.0
 
 
 def robot():
@@ -71,9 +72,7 @@ def test_prm_rigidbody2d():
         ]
     )
 
-    space = RigidBody2dSpace(
-        np.array([0.0, 0.0, -np.pi]), np.array([100.0, 100.0, np.pi])
-    )
+    space = RigidBody2dSpace(np.array([0.0, 0.0, -np.pi]), np.array([100.0, 100.0, np.pi]))
     space.set_weights_from_pts(np.vstack([p.pts for p in bot.polys]))
 
     checker = cvx_cc.ConvexPolygon2dCollisionChecker(
@@ -92,3 +91,4 @@ def test_prm_rigidbody2d():
     assert plan is not None
     assert isinstance(plan, PRMPlan)
     assert isinstance(plan.path_indices, list)
+    assert isinstance(plan.path, PiecewisePath)
