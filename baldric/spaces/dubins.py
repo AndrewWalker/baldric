@@ -49,6 +49,7 @@ class DubinsPath:
     param: np.ndarray
     rho: float
     path_type: DubinsPathType
+    intermediate: DubinsIntermediateResults | None
 
     @property
     def segment_types(self):
@@ -84,7 +85,6 @@ def dubins_intermediate_results(q0: ArrayLike, q1: ArrayLike, rho: float) -> Dub
     d = D / rho
     theta = 0
     if d > 0:
-        print("#####", dq)
         theta = mod2pi(np.atan2(dq[1], dq[0]))
     alpha = mod2pi(q0[2] - theta)
     beta = mod2pi(q1[2] - theta)
@@ -94,7 +94,6 @@ def dubins_intermediate_results(q0: ArrayLike, q1: ArrayLike, rho: float) -> Dub
 def shortest_path(qi: ArrayLike, qf: ArrayLike, rho: float) -> DubinsPath:
     qi = np.asarray(qi)
     qf = np.asarray(qf)
-    print("---", qi, qf)
     best_cost = float("inf")
     state = dubins_intermediate_results(qi, qf, rho)
     path = None
@@ -104,7 +103,7 @@ def shortest_path(qi: ArrayLike, qf: ArrayLike, rho: float) -> DubinsPath:
             continue
         cost = np.sum(params)
         if cost < best_cost:
-            path = DubinsPath(qi, params, rho, e)
+            path = DubinsPath(qi, params, rho, e, state)
             best_cost = cost
     return path
 
@@ -197,7 +196,7 @@ def dubins_segment(t: float, qi: np.ndarray, segment_type: SegmentType):
         case SegmentType.L_SEG:
             return qi + np.array([np.sin(qi[2] + t) - st, -np.cos(qi[2] + t) + ct, t])
         case SegmentType.R_SEG:
-            return qi + np.array([-np.sin(qi[2] + t) + st, np.cos(qi[2] + t) - ct, -t])
+            return qi + np.array([-np.sin(qi[2] - t) + st, np.cos(qi[2] - t) - ct, -t])
         case SegmentType.S_SEG:
             return qi + np.array([ct * t, st * t, 0.0])
 
