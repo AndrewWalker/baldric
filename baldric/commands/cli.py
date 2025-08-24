@@ -26,17 +26,17 @@ def create_samples():
 @click.command()
 @click.option("--name", "-n", type=str, required=True)
 @click.option("--anim", "-a", is_flag=True)
+@click.option("--graph", "-g", is_flag=True)
 @click.option("--dryrun", "-d", is_flag=True, help="plot without solve")
-def solve_sample(name: str, anim: bool, dryrun: bool):
+def solve_sample(name: str, anim: bool, dryrun: bool, graph: bool):
     problem_config = sample_problem_configs()[name]
     p = create_problem(problem_config)
-    if dryrun:
-        plot_without_solve(p, name + ".png")
-    elif anim:
-        plot_problem_anim(p, name + ".gif")
-    else:
-        plot_problem(p, name + ".png")
-    print(p.collision_checker.checks)
+    plot_without_solve(p, name + "_dry.png")
+    if not dryrun:
+        if anim:
+            plot_problem_anim(p, name + ".gif")
+        else:
+            plot_problem(p, name + ".png", show_graph=graph)
 
 
 @click.command()

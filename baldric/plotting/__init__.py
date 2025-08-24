@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.animation as animation
+from baldric.planners.planner import DiscreteGoal
 from baldric.problem import Problem
 from baldric.spaces import PiecewisePath
 from baldric.collision import CollisionChecker
@@ -75,14 +76,15 @@ def plot_prm_plan(ax: plt.Axes, plan: PRMPlan):
     plot_piecewise_path(ax, plan.path)
 
 
-def plot_rrt_plan(ax: plt.Axes, plan: RRTPlan):
-    qs = plan.t.activeConfigurations
-    ax.plot(qs[:, 0], qs[:, 1], "b.")
-    for i, j in plan.t.edges:
-        q0 = qs[i, :]
-        q1 = qs[j, :]
-        eqs = np.vstack([q0, q1])
-        ax.plot(eqs[:, 0], eqs[:, 1], "g-", alpha=0.4)
+def plot_rrt_plan(ax: plt.Axes, plan: RRTPlan, show_graph: bool):
+    if show_graph:
+        qs = plan.t.activeConfigurations
+        ax.plot(qs[:, 0], qs[:, 1], "b.")
+        for i, j in plan.t.edges:
+            q0 = qs[i, :]
+            q1 = qs[j, :]
+            eqs = np.vstack([q0, q1])
+            ax.plot(eqs[:, 0], eqs[:, 1], "g-", alpha=0.4)
     plot_piecewise_path(ax, plan.path)
 
 
@@ -95,26 +97,33 @@ def plot_path_configurations(ax: plt.Axes, path: PiecewisePath, bot: ConvexPolyg
 
 def plot_without_solve(problem: Problem, dst: str):
     fig = plt.figure()
+    plt.tight_layout()
     ax = plt.gca()
-    ax.grid()
     plot_collision_checker(ax, problem.collision_checker)
     match problem.collision_checker:
         case ConvexPolygon2dCollisionChecker():
             bot = problem.collision_checker.robot
             plot_polyset(ax, bot.transform(problem.init), "green")
+    match problem.goal, problem.collision_checker:
+        case DiscreteGoal(), ConvexPolygon2dCollisionChecker():
+            bot = problem.collision_checker.robot
+            plot_polyset(ax, bot.transform(problem.goal.location), "purple")
 
     lo = problem.space._low
     hi = problem.space._high
     ax.set_xlim([lo[0], hi[1]])
     ax.set_ylim([lo[1], hi[1]])
     ax.set_aspect("equal")
-    plt.savefig(dst)
+    plt.tight_layout(pad=0)
+    plt.gca().set_axis_off()
+    plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
+    plt.margins(0, 0)
+    plt.savefig(dst, bbox_inches="tight", pad_inches=0)
 
 
-def plot_problem(problem: Problem, dst: str):
+def plot_problem(problem: Problem, dst: str, show_graph: bool):
     fig = plt.figure()
     ax = plt.gca()
-    ax.grid()
     plot_collision_checker(ax, problem.collision_checker)
 
     plan = problem.planner.plan(problem.init, problem.goal)
@@ -122,7 +131,11 @@ def plot_problem(problem: Problem, dst: str):
         case PRMPlan():
             plot_prm_plan(ax, plan)
         case RRTPlan():
-            plot_rrt_plan(ax, plan)
+            plot_rrt_plan(ax, plan, show_graph)
+    match problem.goal, problem.collision_checker:
+        case DiscreteGoal(), ConvexPolygon2dCollisionChecker():
+            bot = problem.collision_checker.robot
+            plot_polyset(ax, bot.transform(problem.goal.location), "purple")
 
     match problem.collision_checker:
         case ConvexPolygon2dCollisionChecker():
@@ -137,7 +150,10 @@ def plot_problem(problem: Problem, dst: str):
     ax.set_xlim([lo[0], hi[1]])
     ax.set_ylim([lo[1], hi[1]])
     ax.set_aspect("equal")
-    plt.savefig(dst)
+    plt.gca().set_axis_off()
+    plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
+    plt.margins(0, 0)
+    plt.savefig(dst, bbox_inches="tight", pad_inches=0)
 
 
 def plot_problem_anim(problem: Problem, dst: str):

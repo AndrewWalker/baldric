@@ -27,7 +27,7 @@ class DubinsSpace(Space):
 
     def distance(self, q0: Configuration, q1: Configuration) -> float:
         """Calculate the distance between configurations"""
-        return dubins.shortest_path(q0, q1, self.rho)
+        return dubins.shortest_path(q0, q1, self.rho).length
 
     def distance_many(self, qs: ConfigurationSet, q1: Configuration) -> np.ndarray:
         dists = []
@@ -38,3 +38,11 @@ class DubinsSpace(Space):
         """Interpolate between configurations"""
         dq = self.difference(q0, q1)
         return self.normalise(q0 + s * dq)
+
+    def interpolate_many(self, q0: Configuration, q1: Configuration, ss: np.ndarray) -> ConfigurationSet:
+        lst = []
+        pth = dubins.shortest_path(q0, q1, self.rho)
+        for i in range(ss.shape[0]):
+            q = pth.i
+            lst.append(q)
+        return np.vstack(lst)

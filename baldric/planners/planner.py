@@ -7,12 +7,12 @@ from typing import Generic, TypeVar
 PlanT = TypeVar("PlanT")
 
 
-class Goal:
+class GoalBase:
     def satisified(self, q):
         return False
 
 
-class DiscreteGoal(Goal):
+class DiscreteGoal(GoalBase):
     def __init__(self, location: Configuration, tolerance: float, space: Space):
         super().__init__()
         self.location = location
@@ -21,6 +21,9 @@ class DiscreteGoal(Goal):
 
     def satisified(self, q):
         return self.space.distance(self.location, q) < self.tolerance
+
+
+Goal = Union[DiscreteGoal]
 
 
 class Planner(Generic[PlanT]):

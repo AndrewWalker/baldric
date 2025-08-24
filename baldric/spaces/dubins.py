@@ -51,6 +51,22 @@ class DubinsPath:
     path_type: DubinsPathType
 
     @property
+    def segment_types(self):
+        match self.path_type:
+            case DubinsPathType.LRL:
+                return [SegmentType.L_SEG, SegmentType.R_SEG, SegmentType.L_SEG]
+            case DubinsPathType.RLR:
+                return [SegmentType.R_SEG, SegmentType.L_SEG, SegmentType.R_SEG]
+            case DubinsPathType.LSL:
+                return [SegmentType.L_SEG, SegmentType.S_SEG, SegmentType.L_SEG]
+            case DubinsPathType.LSR:
+                return [SegmentType.L_SEG, SegmentType.S_SEG, SegmentType.R_SEG]
+            case DubinsPathType.RSL:
+                return [SegmentType.R_SEG, SegmentType.S_SEG, SegmentType.L_SEG]
+            case DubinsPathType.RSR:
+                return [SegmentType.R_SEG, SegmentType.S_SEG, SegmentType.R_SEG]
+
+    @property
     def length(self):
         return np.sum(self.param) * self.rho
 
@@ -68,6 +84,7 @@ def dubins_intermediate_results(q0: ArrayLike, q1: ArrayLike, rho: float) -> Dub
     d = D / rho
     theta = 0
     if d > 0:
+        print("#####", dq)
         theta = mod2pi(np.atan2(dq[1], dq[0]))
     alpha = mod2pi(q0[2] - theta)
     beta = mod2pi(q1[2] - theta)
@@ -77,6 +94,7 @@ def dubins_intermediate_results(q0: ArrayLike, q1: ArrayLike, rho: float) -> Dub
 def shortest_path(qi: ArrayLike, qf: ArrayLike, rho: float) -> DubinsPath:
     qi = np.asarray(qi)
     qf = np.asarray(qf)
+    print("---", qi, qf)
     best_cost = float("inf")
     state = dubins_intermediate_results(qi, qf, rho)
     path = None
@@ -172,138 +190,47 @@ def dubins_LRL(state: DubinsIntermediateResults):
         return np.array([t, p, mod2pi(mod2pi(state.beta) - state.alpha - t + mod2pi(p))])
 
 
-# double dubins_segment_length( DubinsPath* path, int i )
-# {
-#     if( (i < 0) || (i > 2) )
-#     {
-#         return INFINITY;
-#     }
-#     return path.param[i] * path.rho;
-# }
+def dubins_segment(t: float, qi: np.ndarray, segment_type: SegmentType):
+    st = np.sin(qi[2])
+    ct = np.cos(qi[2])
+    match segment_type:
+        case SegmentType.L_SEG:
+            return qi + np.array([np.sin(qi[2] + t) - st, -np.cos(qi[2] + t) + ct, t])
+        case SegmentType.R_SEG:
+            return qi + np.array([-np.sin(qi[2] + t) + st, np.cos(qi[2] + t) - ct, -t])
+        case SegmentType.S_SEG:
+            return qi + np.array([ct * t, st * t, 0.0])
 
-# double dubins_segment_length_normalized( DubinsPath* path, int i )
-# {
-#     if( (i < 0) || (i > 2) )
-#     {
-#         return INFINITY;
-#     }
-#     return path.param[i];
-# }
 
-# DubinsPathType dubins_path_type( DubinsPath* path )
-# {
-#     return path.type;
-# }
+def dubins_path_sample(pth: DubinsPath, t: float):
+    # tprime is the normalised variant of the parameter t
+    tprime = t / pth.rho
+    segs = pth.segment_types
+    qi = np.array([0, 0, pth.qi[0]])
+    p1 = pth.param[0]
+    p2 = pth.param[1]
+    q1 = dubins_segment(p1, qi, segs[0])
+    q2 = dubins_segment(p2, q1, segs[1])
+    if tprime < p1:
+        q = dubins_segment(tprime, qi, segs[0])
+    elif tprime < (p1 + p2):
+        q = dubins_segment(tprime - p1, q1, segs[1])
+    else:
+        q = dubins_segment(tprime - p1 - p2, q2, segs[2])
 
-# void dubins_segment( double t, double qi[3], double qt[3], SegmentType type)
-# {
-#     double st = sin(qi[2]);
-#     double ct = cos(qi[2]);
-#     if( type == L_SEG ) {
-#         qt[0] = +sin(qi[2]+t) - st;
-#         qt[1] = -cos(qi[2]+t) + ct;
-#         qt[2] = t;
-#     }
-#     else if( type == R_SEG ) {
-#         qt[0] = -sin(qi[2]-t) + st;
-#         qt[1] = +cos(qi[2]-t) - ct;
-#         qt[2] = -t;
-#     }
-#     else if( type == S_SEG ) {
-#         qt[0] = ct * t;
-#         qt[1] = st * t;
-#         qt[2] = 0.0;
-#     }
-#     qt[0] += qi[0];
-#     qt[1] += qi[1];
-#     qt[2] += qi[2];
-# }
+    # scale the target configuration, translate back to the original starting point
+    q[0] = q[0] * pth.rho + pth.qi[0]
+    q[1] = q[1] * pth.rho + pth.qi[1]
+    q[2] = mod2pi(q[2])
+    return q
 
-# int dubins_path_sample( DubinsPath* path, double t, double q[3] )
-# {
-#     /* tprime is the normalised variant of the parameter t */
-#     double tprime = t / path.rho;
-#     double qi[3]; /* The translated initial configuration */
-#     double q1[3]; /* end-of segment 1 */
-#     double q2[3]; /* end-of segment 2 */
-#     const SegmentType* types = DIRDATA[path.type];
-#     double p1, p2;
 
-#     if( t < 0 || t > dubins_path_length(path) ) {
-#         return EDUBPARAM;
-#     }
-
-#     /* initial configuration */
-#     qi[0] = 0.0;
-#     qi[1] = 0.0;
-#     qi[2] = path.qi[2];
-
-#     /* generate the target configuration */
-#     p1 = path.param[0];
-#     p2 = path.param[1];
-#     dubins_segment( p1,      qi,    q1, types[0] );
-#     dubins_segment( p2,      q1,    q2, types[1] );
-#     if( tprime < p1 ) {
-#         dubins_segment( tprime, qi, q, types[0] );
-#     }
-#     else if( tprime < (p1+p2) ) {
-#         dubins_segment( tprime-p1, q1, q,  types[1] );
-#     }
-#     else {
-#         dubins_segment( tprime-p1-p2, q2, q,  types[2] );
-#     }
-
-#     /* scale the target configuration, translate back to the original starting point */
-#     q[0] = q[0] * path.rho + path.qi[0];
-#     q[1] = q[1] * path.rho + path.qi[1];
-#     q[2] = mod2pi(q[2]);
-
-#     return EDUBOK;
-# }
-
-# int dubins_path_sample_many(DubinsPath* path, double stepSize,
-#                             DubinsPathSamplingCallback cb, void* user_data)
-# {
-#     int retcode;
-#     double q[3];
-#     double x = 0.0;
-#     double length = dubins_path_length(path);
-#     while( x <  length ) {
-#         dubins_path_sample( path, x, q );
-#         retcode = cb(q, x, user_data);
-#         if( retcode != 0 ) {
-#             return retcode;
-#         }
-#         x += stepSize;
-#     }
-#     return 0;
-# }
-
-# int dubins_path_endpoint( DubinsPath* path, double q[3] )
-# {
-#     return dubins_path_sample( path, dubins_path_length(path) - EPSILON, q );
-# }
-
-# int dubins_extract_subpath( DubinsPath* path, double t, DubinsPath* newpath )
-# {
-#     /* calculate the true parameter */
-#     double tprime = t / path.rho;
-
-#     if((t < 0) || (t > dubins_path_length(path)))
-#     {
-#         return EDUBPARAM;
-#     }
-
-#     /* copy most of the data */
-#     newpath.qi[0] = path.qi[0];
-#     newpath.qi[1] = path.qi[1];
-#     newpath.qi[2] = path.qi[2];
-#     newpath.rho   = path.rho;
-#     newpath.type  = path.type;
-
-#     /* fix the parameters */
-#     newpath.param[0] = fmin( path.param[0], tprime );
-#     newpath.param[1] = fmin( path.param[1], tprime - newpath.param[0]);
-#     newpath.param[2] = fmin( path.param[2], tprime - newpath.param[0] - newpath.param[1]);
-#     return 0;
-# }
+def dubins_path_sample_many(pth: DubinsPath, stepSize: float):
+    x = 0.0
+    length = pth.length
+    lst = []
+    while x < length:
+        q = dubins_path_sample(pth, x)
+        lst.append(q)
+        x += stepSize
+    return np.vstack(lst)
