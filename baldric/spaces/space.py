@@ -23,13 +23,16 @@ class Space:
         self._weights = np.ones(self._dimension)
 
     def valid(self, q) -> bool:
+        res = True
         if len(q) != self._dimension:
-            return False
+            res = False
         if np.any(q < self._low):
-            return False
+            res = False
         if np.any(q > self._high):
-            return False
-        return True
+            res = False
+        if not res:
+            print("###", q)
+        return res
 
     @property
     def dimension(self) -> int:

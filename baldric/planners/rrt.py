@@ -80,6 +80,8 @@ class PlannerRRT(Planner[RRTPlan]):
         eta: float = 1.0,
     ):
         super().__init__(colltest)
+        assert eta > 0
+        assert n > 0
         self._n = n
         self._eta = eta
         self._qdims = colltest._space.dimension

@@ -8,16 +8,16 @@ from baldric.collision.convex_collision import (
     ConvexPolygon2dCollisionChecker,
 )
 from baldric.problem import Problem
-from baldric.metrics import VectorNearest
+from baldric.metrics import VectorNearest, NaiveNearest, Nearest
 from baldric.sampler import FreespaceSampler
 from baldric.spaces import Space, RigidBody2dSpace, VectorSpace, DubinsSpace
-from baldric.planners import Planner, Goal, DiscreteGoal
+from baldric.planners import Planner, Goal, DiscreteGoal, PredicateGoal
 from baldric.planners.prm import PlannerPRM
 from baldric.planners.rrt import PlannerRRT
 from baldric.commands import config
 
 
-def create_planner(cfg: config.ProblemConfig, checker: CollisionChecker):
+def create_planner(cfg: config.ProblemConfig, checker: CollisionChecker, nearest: Nearest):
     sampler = FreespaceSampler(
         checker=checker,
     )
@@ -25,7 +25,7 @@ def create_planner(cfg: config.ProblemConfig, checker: CollisionChecker):
         case config.RRTConfig():
             return PlannerRRT(
                 sampler=sampler,
-                nearest=VectorNearest(checker._space),
+                nearest=nearest,
                 colltest=checker,
                 n=cfg.planner.n,
                 eta=cfg.planner.eta,
@@ -33,11 +33,19 @@ def create_planner(cfg: config.ProblemConfig, checker: CollisionChecker):
         case config.PRMConfig():
             return PlannerPRM(
                 sampler=sampler,
-                nearest=VectorNearest(checker._space),
+                nearest=nearest,
                 colltest=checker,
                 n=cfg.planner.n,
                 r=cfg.planner.r,
             )
+
+
+def create_nearest(cfg: config.ProblemConfig, space: Space):
+    match cfg.metric:
+        case config.NaiveNearestConfig():
+            return NaiveNearest(space)
+        case config.VectorNearestConfig():
+            return VectorNearest(space)
 
 
 def create_space(cfg: config.ProblemConfig):
@@ -79,6 +87,12 @@ def create_goal(cfg: config.GoalConfig, space: Space):
     match cfg:
         case config.DiscreteGoalConfig():
             return DiscreteGoal(location=np.asarray(cfg.location), tolerance=cfg.tolerance, space=space)
+        case config.DubinsGoalConfig():
+
+            def goalfn(q0, q1):
+                return np.linalg.norm((q0 - q1)[:2]) < cfg.tolerance
+
+            return PredicateGoal(location=np.asarray(cfg.location), pred=goalfn)
 
 
 def create_problem(cfg: config.ProblemConfig):
@@ -87,7 +101,8 @@ def create_problem(cfg: config.ProblemConfig):
     p.init = np.asarray(cfg.initial)
     p.goal = create_goal(cfg.goal, p.space)
     p.collision_checker = create_checker(cfg, p.space)
-    p.planner = create_planner(cfg, p.collision_checker)
+    p.nearest = create_nearest(cfg, p.space)
+    p.planner = create_planner(cfg, p.collision_checker, p.nearest)
     match p.space, p.collision_checker:
         case RigidBody2dSpace(), ConvexPolygon2dCollisionChecker():
             # p.space.set_weights_from_pts(p.collision_checker.robot.all_points)

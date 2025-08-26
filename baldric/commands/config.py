@@ -72,12 +72,30 @@ class DiscreteGoalConfig(BaseModel):
     kind: Literal["discrete"] = "discrete"
 
 
-GoalConfig = Union[DiscreteGoalConfig]
+class DubinsGoalConfig(BaseModel):
+    location: List[float]
+    tolerance: float = 1.0
+    kind: Literal["dubins"] = "dubins"
+
+
+GoalConfig = Union[DiscreteGoalConfig, DubinsGoalConfig]
+
+
+class VectorNearestConfig(BaseModel):
+    kind: Literal["vector"] = "vector"
+
+
+class NaiveNearestConfig(BaseModel):
+    kind: Literal["naive"] = "naive"
+
+
+NearestConfig = Union[VectorNearestConfig, NaiveNearestConfig]
 
 
 class ProblemConfig(BaseModel):
     planner: PlannerConfig = Field(discriminator="kind")
     space: SpaceConfig = Field(discriminator="kind")
     checker: CheckerConfig = Field(discriminator="kind")
+    metric: NearestConfig = Field(discriminator="kind", default=VectorNearestConfig())
     goal: GoalConfig = Field(discriminator="kind")
     initial: List[float]

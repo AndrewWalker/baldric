@@ -78,7 +78,8 @@ def mod2pi(theta: float):
 
 def dubins_intermediate_results(q0: ArrayLike, q1: ArrayLike, rho: float) -> DubinsIntermediateResults:
     q0 = np.asarray(q0)
-    q1 = np.asarray(q1)
+    q1 = np.asarray(q1).reshape((3,))
+    assert q0.shape == q1.shape
     assert rho > 0.0
     dq = q1 - q0
     D = np.linalg.norm(dq[:2])
@@ -135,11 +136,11 @@ def dubins_LSL(state: DubinsIntermediateResults):
 
 
 def dubins_RSR(state: DubinsIntermediateResults):
-    tmp0 = state.d - state.sa - state.sb
-    p_sq = 2 + state.d_sq - (2 * state.c_ab) + (2 * state.d * (state.sa - state.sb))
+    tmp0 = state.d - state.sa + state.sb
+    p_sq = 2 + state.d_sq - (2 * state.c_ab) + (2 * state.d * (state.sb - state.sa))
 
     if p_sq >= 0:
-        tmp1 = np.atan2((state.cb - state.ca), tmp0)
+        tmp1 = np.atan2((state.ca - state.cb), tmp0)
         return np.array(
             [
                 mod2pi(state.alpha - tmp1),
@@ -192,20 +193,26 @@ def dubins_LRL(state: DubinsIntermediateResults):
 def dubins_segment(t: float, qi: np.ndarray, segment_type: SegmentType):
     st = np.sin(qi[2])
     ct = np.cos(qi[2])
+    qt = np.zeros((3,))
     match segment_type:
         case SegmentType.L_SEG:
-            return qi + np.array([np.sin(qi[2] + t) - st, -np.cos(qi[2] + t) + ct, t])
+            qt = np.array([np.sin(qi[2] + t) - st, -np.cos(qi[2] + t) + ct, t])
         case SegmentType.R_SEG:
-            return qi + np.array([-np.sin(qi[2] - t) + st, np.cos(qi[2] - t) - ct, -t])
+            qt = np.array([-np.sin(qi[2] - t) + st, np.cos(qi[2] - t) - ct, -t])
         case SegmentType.S_SEG:
-            return qi + np.array([ct * t, st * t, 0.0])
+            qt = np.array([ct * t, st * t, 0.0])
+    return qt + qi
 
 
 def dubins_path_sample(pth: DubinsPath, t: float):
     # tprime is the normalised variant of the parameter t
+    assert t >= 0
+    if t > pth.length:
+        print("length exceeds", t, pth.length)
+        t = pth.length
     tprime = t / pth.rho
     segs = pth.segment_types
-    qi = np.array([0, 0, pth.qi[0]])
+    qi = np.array([0, 0, pth.qi[2]])
     p1 = pth.param[0]
     p2 = pth.param[1]
     q1 = dubins_segment(p1, qi, segs[0])

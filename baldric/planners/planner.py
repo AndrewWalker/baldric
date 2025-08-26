@@ -1,5 +1,5 @@
 import numpy as np
-from typing import List, Union
+from typing import List, Union, Callable
 from baldric.collision import CollisionChecker
 from baldric.spaces import Space, Configuration
 from typing import Generic, TypeVar
@@ -23,7 +23,16 @@ class DiscreteGoal(GoalBase):
         return self.space.distance(self.location, q) < self.tolerance
 
 
-Goal = Union[DiscreteGoal]
+class PredicateGoal(GoalBase):
+    def __init__(self, location: Configuration, pred: Callable[[Configuration, Configuration], bool]):
+        self.location = location
+        self.pred = pred
+
+    def satisified(self, q):
+        return self.pred(self.location, q)
+
+
+Goal = Union[DiscreteGoal, PredicateGoal]
 
 
 class Planner(Generic[PlanT]):

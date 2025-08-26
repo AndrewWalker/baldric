@@ -16,6 +16,7 @@ from baldric.collision.convex_collision import (
 from baldric.planners.rrt import Tree
 from baldric.planners.prm import PRMPlan
 from baldric.planners.rrt import RRTPlan
+from loguru import logger
 
 
 def plot_aabb(ax: plt.Axes, box: AABB, color="red"):
@@ -61,6 +62,8 @@ def plot_piecewise_path(ax: plt.Axes, path: PiecewisePath | None):
     if path is not None:
         qs = path.configurations
         ax.plot(qs[:, 0], qs[:, 1], "r-")
+        qs = path.interpolate_with_step(1.0)
+        ax.plot(qs[:, 0], qs[:, 1], "k.")
 
 
 def plot_prm_plan(ax: plt.Axes, plan: PRMPlan):
@@ -79,6 +82,7 @@ def plot_prm_plan(ax: plt.Axes, plan: PRMPlan):
 def plot_rrt_plan(ax: plt.Axes, plan: RRTPlan, show_graph: bool):
     if show_graph:
         qs = plan.t.activeConfigurations
+        print("# configurations", qs.shape)
         ax.plot(qs[:, 0], qs[:, 1], "b.")
         for i, j in plan.t.edges:
             q0 = qs[i, :]
@@ -131,7 +135,10 @@ def plot_problem(problem: Problem, dst: str, show_graph: bool):
         case PRMPlan():
             plot_prm_plan(ax, plan)
         case RRTPlan():
+            logger.info("rrt plan type {}", show_graph)
             plot_rrt_plan(ax, plan, show_graph)
+        case _:
+            logger.info("unknown plan type")
     match problem.goal, problem.collision_checker:
         case DiscreteGoal(), ConvexPolygon2dCollisionChecker():
             bot = problem.collision_checker.robot
@@ -174,7 +181,7 @@ def plot_problem_anim(problem: Problem, dst: str):
         case PRMPlan():
             plot_prm_plan(ax, plan)
         case RRTPlan():
-            plot_rrt_plan(ax, plan)
+            plot_rrt_plan(ax, plan, False)
 
     checker = problem.collision_checker
     match checker:

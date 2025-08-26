@@ -70,7 +70,8 @@ class ConvexPolygon2dCollisionChecker(CollisionChecker):
         self.checks = 0
 
     def collisionFree(self, q: np.ndarray) -> bool:
-        assert self.space.valid(q)
+        if not self.space.valid(q):
+            return False
         for p in self.obs.polys:
             trobot = self.robot.transform(q).polys
             for rpoly in trobot:

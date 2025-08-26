@@ -36,13 +36,12 @@ class DubinsSpace(Space):
 
     def interpolate(self, q0: Configuration, q1: Configuration, s: float) -> Configuration:
         """Interpolate between configurations"""
-        dq = self.difference(q0, q1)
-        return self.normalise(q0 + s * dq)
+        pth = dubins.shortest_path(q0, q1, self.rho)
+        res = dubins.dubins_path_sample(pth, s * pth.length)
+        return res
 
     def interpolate_many(self, q0: Configuration, q1: Configuration, ss: np.ndarray) -> ConfigurationSet:
-        lst = []
         pth = dubins.shortest_path(q0, q1, self.rho)
-        for i in range(ss.shape[0]):
-            q = pth.i
-            lst.append(q)
-        return np.vstack(lst)
+        res = dubins.dubins_path_sample_many(pth, 1.0)
+        res = self.normalise(res)
+        return res
