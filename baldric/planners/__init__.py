@@ -1,3 +1,3 @@
-from .planner import Planner, PlanT, Goal, DiscreteGoal, PredicateGoal
+from .planner import Planner, PlanT
 from .rrt import RRTPlan, PlannerRRT
 from .prm import PRMPlan, PlannerPRM

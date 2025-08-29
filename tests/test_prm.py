@@ -4,7 +4,8 @@ from baldric.collision import aabb_collision as box_cc
 from baldric.collision import convex_collision as cvx_cc
 from baldric.spaces import VectorSpace, RigidBody2dSpace, PiecewisePath
 from baldric.metrics import VectorNearest
-from baldric.planners import PlannerPRM, PRMPlan, DiscreteGoal
+from baldric.planners import PlannerPRM, PRMPlan
+from baldric.goals import DiscreteGoal
 
 
 def test_prm_in_r2():

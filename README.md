@@ -4,6 +4,18 @@
 >
 > -- <cite>Baldric</cite>
 
+## Rationale
+
+The cunning plan of this library is to improve understanding of planning fundamentals.
+
+* To demonstrate the concepts of path and motion planning as clearly as possible 
+  without worrying a great deal about performance.
+* To demonstrate a composable approach to planning through algebraic data types
+  or the closest python equivalent, union types.
+* To avoid coupling the reference implementations with extraneous requirements 
+  (configuration and plotting).
+
+
 ## Basics
 
 ### Installation & Setup

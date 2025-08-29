@@ -13,9 +13,7 @@ from baldric.collision.convex_collision import (
     ConvexPolygon2dSet,
     ConvexPolygon2dCollisionChecker,
 )
-from baldric.planners.rrt import Tree
-from baldric.planners.prm import PRMPlan
-from baldric.planners.rrt import RRTPlan
+from baldric.planners import Planner, RRTPlan, PRMPlan, PlannerRRT, PlannerPRM
 from loguru import logger
 
 

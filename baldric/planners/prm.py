@@ -6,7 +6,8 @@ from baldric.spaces import Space, PiecewisePath
 from baldric.sampler import FreespaceSampler
 from baldric.collision import CollisionChecker
 from baldric.metrics import Nearest
-from baldric.planners import Planner, Goal, DiscreteGoal
+from baldric.planners import Planner
+from baldric.goals import Goal, DiscreteGoal
 from baldric.spaces import Configuration
 import math
 

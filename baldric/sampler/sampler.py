@@ -1,4 +1,5 @@
 import numpy as np
+from baldric.configuration import Configuration
 from baldric.collision import CollisionChecker
 
 
@@ -12,6 +13,9 @@ class FreespaceSampler:
     def space(self):
         return self._checker.space
 
+    def collisionFree(self, q: Configuration):
+        return self._checker.collisionFree(q)
+
     def sample(self) -> np.ndarray:
         """Produce a sample in the configuration space"""
         return np.random.random(self.space.dimension) * self._size + self.space._low
@@ -19,6 +23,6 @@ class FreespaceSampler:
     def sampleFree(self) -> np.ndarray | None:
         """Produce a collision-free sample in the configuration space"""
         x = self.sample()
-        if self._checker.collisionFree(x):
+        if self.collisionFree(x):
             return x
         return None

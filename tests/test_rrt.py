@@ -2,7 +2,8 @@ import numpy as np
 from baldric.sampler import FreespaceSampler
 from baldric.collision import aabb_collision as box_cc
 from baldric.metrics import VectorNearest
-from baldric.planners import PlannerRRT, DiscreteGoal
+from baldric.planners import PlannerRRT
+from baldric.goals import DiscreteGoal
 from baldric.spaces import VectorSpace
 
 

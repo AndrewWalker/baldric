@@ -2,15 +2,7 @@ import numpy as np
 from typing import List
 from baldric.collision import CollisionChecker
 from baldric.spaces import VectorSpace
-
-
-class AABB:
-    def __init__(self, qcen, qlim):
-        self._qcen = qcen
-        self._qlim = qlim
-
-    def containsPt(self, q):
-        return np.all(np.abs(q - self._qcen) < self._qlim)
+from baldric.geometry import AABB
 
 
 class AABBCollisionChecker(CollisionChecker):
