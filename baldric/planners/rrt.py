@@ -106,7 +106,7 @@ class PlannerRRT(Planner[RRTPlan]):
             x_rand = self._sampler.sampleFree()
         return x_rand
 
-    def plan(self, x_init: np.ndarray, ingoal: Goal) -> RRTPlan | None:
+    def plan(self, x_init: np.ndarray, ingoal: Goal) -> RRTPlan:
         logger.info("solving")
         assert self.collisionFree(x_init)
         tree = Tree(maximumNodes=self._n, qdims=self._qdims)

@@ -9,18 +9,16 @@ from baldric.collision.convex_collision import (
 )
 from baldric.problem import Problem
 from baldric.metrics import VectorNearest, NaiveNearest, Nearest
-from baldric.sampler import FreespaceSampler
+from baldric.sampler import FreespaceSampler, BiasedFreespaceSampler
 from baldric.spaces import Space, RigidBody2dSpace, VectorSpace, DubinsSpace
-from baldric.planners import Planner, Goal, DiscreteGoal, PredicateGoal
+from baldric.planners import Planner
+from baldric.goals import Goal, DiscreteGoal, PredicateGoal
 from baldric.planners.prm import PlannerPRM
 from baldric.planners.rrt import PlannerRRT
 from baldric.commands import config
 
 
-def create_planner(cfg: config.ProblemConfig, checker: CollisionChecker, nearest: Nearest):
-    sampler = FreespaceSampler(
-        checker=checker,
-    )
+def create_planner(cfg: config.ProblemConfig, checker: CollisionChecker, nearest: Nearest, sampler: FreespaceSampler):
     match cfg.planner:
         case config.RRTConfig():
             return PlannerRRT(
@@ -95,14 +93,23 @@ def create_goal(cfg: config.GoalConfig, space: Space):
             return PredicateGoal(location=np.asarray(cfg.location), pred=goalfn)
 
 
+def create_sampler(cfg: config.SamplerConfig, checker: CollisionChecker, goal: Goal):
+    match cfg:
+        case config.FreespaceSamplerConfig():
+            return FreespaceSampler(checker)
+        case config.BaisedSamplerConfig():
+            return BiasedFreespaceSampler(checker, goal, cfg.bias_p)
+
+
 def create_problem(cfg: config.ProblemConfig):
     p = Problem()
     p.space = create_space(cfg)
     p.init = np.asarray(cfg.initial)
     p.goal = create_goal(cfg.goal, p.space)
     p.collision_checker = create_checker(cfg, p.space)
+    p.sampler = create_sampler(cfg.sampler, p.collision_checker, p.goal)
     p.nearest = create_nearest(cfg, p.space)
-    p.planner = create_planner(cfg, p.collision_checker, p.nearest)
+    p.planner = create_planner(cfg, p.collision_checker, p.nearest, p.sampler)
     match p.space, p.collision_checker:
         case RigidBody2dSpace(), ConvexPolygon2dCollisionChecker():
             # p.space.set_weights_from_pts(p.collision_checker.robot.all_points)

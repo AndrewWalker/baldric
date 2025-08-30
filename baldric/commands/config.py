@@ -15,6 +15,15 @@ class Polygon2dSetConfig(BaseModel):
     polys: List[Polygon2dConfig] = Field(default=[])
 
 
+class FreespaceSamplerConfig(BaseModel):
+    kind: Literal["freespace"] = "freespace"
+
+
+class BaisedSamplerConfig(BaseModel):
+    bias_p: float = 0.05
+    kind: Literal["biased"] = "biased"
+
+
 class RigidSpace2dConfig(BaseModel):
     q_min: List[float]
     q_max: List[float]
@@ -91,11 +100,14 @@ class NaiveNearestConfig(BaseModel):
 
 NearestConfig = Union[VectorNearestConfig, NaiveNearestConfig]
 
+SamplerConfig = Union[FreespaceSamplerConfig | BaisedSamplerConfig]
+
 
 class ProblemConfig(BaseModel):
     planner: PlannerConfig = Field(discriminator="kind")
     space: SpaceConfig = Field(discriminator="kind")
     checker: CheckerConfig = Field(discriminator="kind")
     metric: NearestConfig = Field(discriminator="kind", default=VectorNearestConfig())
+    sampler: SamplerConfig = Field(discriminator="kind", default=FreespaceSamplerConfig())
     goal: GoalConfig = Field(discriminator="kind")
     initial: List[float]

@@ -132,7 +132,7 @@ class PlannerPRM(Planner[PRMPlan]):
             case _:
                 raise RuntimeError(f"Invalid goal type {type(goal)} for PRM")
 
-    def plan(self, q_i: Configuration, goal: Goal) -> PRMPlan | None:
+    def plan(self, q_i: Configuration, goal: Goal) -> PRMPlan:
         q_f = self.resolve_goal(goal)
         if not self.collisionFree(q_i):
             logger.debug("initial configuration not collision free")

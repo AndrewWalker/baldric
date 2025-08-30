@@ -14,11 +14,16 @@ class AABB:
         qlim
             The maximum absolute distance from the center any edge
         """
+        # required that the limits are positive
+        assert np.all(qlim > 0)
         self._qcen = qcen
         self._qlim = qlim
 
+    def transform(self, v: np.ndarray):
+        return AABB(self.center + v, self.limits)
+
     def containsPt(self, q: np.ndarray):
-        """Check if a point is contained in the box
+        """Check if this AABB contains a point
 
         Parameters
         ----------
@@ -26,6 +31,16 @@ class AABB:
             The test point
         """
         return np.all(np.abs(q - self._qcen) < self._qlim)
+
+    def intersectsAABB(self, other: "AABB"):
+        """Check if this AABB intersects another AABB
+
+        Parameters
+        ----------
+        other : AABB
+            The other AABB
+        """
+        return AABB(self.center, self.limits + other.limits).containsPt(other.center)
 
     @property
     def center(self):

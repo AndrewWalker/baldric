@@ -14,6 +14,7 @@ from baldric.commands.config import (
     Polygon2dConfig,
     NaiveNearestConfig,
     VectorNearestConfig,
+    BaisedSamplerConfig,
 )  # noqa: E402
 
 
@@ -215,12 +216,13 @@ def rrt_narrow_passage_infeasible(bot):
 
 def dubins_rrt_empty():
     p = ProblemConfig(
-        planner=RRTConfig(n=400, eta=10.0),
+        planner=RRTConfig(n=400, eta=20.0),
         metric=NaiveNearestConfig(),
         space=DubinsSpaceConfig(q_min=[0, 0, -np.pi], q_max=[100, 100, np.pi], rho=5.0),
+        sampler=BaisedSamplerConfig(),
         # checker=Polygon2dCheckerConfig(robot=point_robot(), obstacles=walls(100), collsion_step=0.1),
         checker=Polygon2dCheckerConfig(robot=bar_robot(), obstacles=narrow_possage(100), collsion_step=0.1),
-        goal=DubinsGoalConfig(location=[80, 20, 0], tolerance=5.0),
+        goal=DubinsGoalConfig(location=[80, 20, 0], tolerance=1.0),
         initial=[20, 20, -np.pi],
     )
     return p

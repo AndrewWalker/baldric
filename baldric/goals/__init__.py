@@ -55,4 +55,4 @@ class AABBGoal(GoalBase):
         return self.box.sample()
 
 
-Goal = Union[DiscreteGoal, PredicateGoal, AABBGoal]
+Goal = DiscreteGoal | PredicateGoal | AABBGoal

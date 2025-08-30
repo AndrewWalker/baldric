@@ -1,4 +1,3 @@
-import numpy as np
 from typing import List
 from baldric.collision import CollisionChecker
 from baldric.spaces import VectorSpace
@@ -6,14 +5,15 @@ from baldric.geometry import AABB
 
 
 class AABBCollisionChecker(CollisionChecker):
-    def __init__(self, space: VectorSpace, boxes: List[AABB], step: float):
+    def __init__(self, space: VectorSpace, boxes: List[AABB], robot: AABB, step: float):
         super().__init__(space)
         self.boxes = boxes
         self.maxStep = step
+        self.robot = robot
 
     def collisionFree(self, x) -> bool:
         for aabb in self.boxes:
-            if aabb.containsPt(x):
+            if aabb.intersectsAABB(self.robot):
                 return False
         return True
 
